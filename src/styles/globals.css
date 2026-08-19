@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+/* display the pop-out icon on the same line as the link */
+.cp-tree a, .cp-tree .cp-text-red {
+  display: flex;
+  flex-wrap: nowrap;
+}
