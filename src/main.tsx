@@ -1,8 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App            from './App.tsx'
-import 'clinical-primitives/styles.css'
 import './styles/globals.css'
+import 'clinical-primitives/styles.css'
 
 
 createRoot(document.getElementById('root')!).render(
