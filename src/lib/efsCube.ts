@@ -1,4 +1,4 @@
-import cubeCsv from '../veo_ibd_efs_cube_rounded.csv?raw'
+import cubeCsv from '../api/veo_ibd_efs_cube_rounded.csv?raw'
 
 /**
  * The VEO-IBD event-free-survival cube.
