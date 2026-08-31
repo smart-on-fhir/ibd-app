@@ -2,10 +2,56 @@ import type { Patient }                from 'fhir/r4'
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router'
 import { useClinicalData, lib }        from 'clinical-primitives'
-import { UserCircle, UserCircleIcon }  from 'lucide-react'
+import type { FhirResource }           from 'clinical-primitives'
+import { Sidebar, UserCircle, UserCircleIcon }  from 'lucide-react'
 import { Spinner }                     from '../components/ui/Spinner'
 import { ErrorMessage }                from '../components/ui/ErrorMessage'
+import { useMediaQuery }               from '../hooks/useMediaQuery'
+import { getPatientData }             from '../api/ihl'
 
+// Vertical iPad (1024px tall side up) and anything narrower gets a collapsed sidebar
+const NARROW_SCREEN = '(max-width: 1024px)'
+
+const SIDEBAR_PREFERENCE_KEY = 'ihl.sidebar'
+
+/**
+ * Whether the reader wants the sidebar, remembered across sessions.
+ *
+ * Absent means "not yet decided", which is open — the layout it was designed
+ * around. Wrapped because `localStorage` throws rather than returning null in
+ * a few real situations: Safari's private mode, and any embedding that blocks
+ * third-party storage. A missing preference is not worth a broken page.
+ */
+function readSidebarPreference(): boolean {
+    try {
+        return localStorage.getItem(SIDEBAR_PREFERENCE_KEY) !== 'closed'
+    } catch {
+        return true
+    }
+}
+
+function writeSidebarPreference(open: boolean): void {
+    try {
+        localStorage.setItem(SIDEBAR_PREFERENCE_KEY, open ? 'open' : 'closed')
+    } catch {
+        // Nothing to do and nothing worth saying: the sidebar still works, it
+        // just starts from the default next time.
+    }
+}
+
+function SidebarToggle({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Toggle sidebar"
+      data-tooltip="Toggle sidebar"
+      className="text-stone-500 hover:bg-stone-200 rounded p-0.5 cursor-pointer"
+    >
+      <Sidebar strokeWidth={1} />
+    </button>
+  )
+}
 
 function NavItem({ to, label }: { to: string; label: string }) {
   return (
@@ -38,9 +84,10 @@ function PatientError({ error }: { error: Error | string }) {
   )
 }
 
-function PatientHeader({ patient }: { patient: Patient }) {
+function PatientHeader({ patient, onToggleSidebar }: { patient: Patient; onToggleSidebar?: () => void }) {
   return (
     <div className="border-b border-stone-200 px-2 py-4 flex items-center gap-2">
+      { onToggleSidebar && <SidebarToggle onClick={onToggleSidebar} /> }
       <div>
         <UserCircle className="h-9 w-9 text-stone-400 fill-stone-400/20" strokeWidth={0.5} />
       </div>
@@ -78,40 +125,86 @@ function PatientNav() {
   return (
     <nav className="flex-1 space-y-1 px-2 py-3">
       <NavItem to={base} label="Patient Dashboard" />
-      <NavItem to={`${base}/page/notes`} label="Clinical Notes" />
-      <NavItem to={`${base}/page/search`} label="Search" />
-      <div className="pt-4">
-        <div className="mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-stone-400">IBD</div>
-        <NavItem to={`${base}/ibd/summary`} label="Summary" />
-        <NavItem to={`${base}/ibd/timeline`} label="Timeline" />
-        <NavItem to={`${base}/ibd/labs`} label="Lab Trends" />
-        <NavItem to={`${base}/ibd/outcomes`} label="Treatment Outcomes" />
-      </div>
+      <NavItem to={`${base}/timeline`} label="Timeline" />
+      <NavItem to={`${base}/cohort`}   label="Cohort" />
+      <NavItem to={`${base}/survival`} label="Survival" />
+      <NavItem to={`${base}/search`}   label="Search" />
+      <NavItem to={`${base}/notes`}    label="Clinical Notes" />
     </nav>
   )
 }
 
 
 export function PatientShell() {
-  const { patient, isLoading, error } = useClinicalData();
-  const [settled, setSettled] = useState(false)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { patient, isLoading, error, loadFromResources } = useClinicalData();
+  const { id }                        = useParams<{ id: string }>()
+  const isNarrow                      = useMediaQuery(NARROW_SCREEN)
+  // The stored preference is state rather than a ref: it is read while
+  // rendering — deciding what to restore when the breakpoint is crossed — and
+  // reading a ref there is exactly what React tells you not to do.
+  const [sidebarPreference, setSidebarPreference] = useState(readSidebarPreference)
+  const [sidebarOpen, setSidebarOpen] = useState(() => !isNarrow && sidebarPreference)
+  const [wasNarrow, setWasNarrow]     = useState(isNarrow)
+  const [loadError, setLoadError]     = useState<Error | null>(null)
 
+  // Which id has already been asked for. A ref rather than state because it
+  // must not cause a render: it exists to stop the effect below from asking
+  // twice — including after a failure, which would otherwise retry forever.
+  const requestedId = useRef<string | null>(null)
+
+  // Crossing the breakpoint may close the sidebar but never opens it against
+  // the reader's wishes: going narrow collapses it because there is no room,
+  // and coming back wide restores whatever they last chose rather than assuming
+  // open. Without that asymmetry a deliberately closed sidebar reappears on
+  // every resize.
+  if (wasNarrow !== isNarrow) {
+    setWasNarrow(isNarrow)
+    setSidebarOpen(isNarrow ? false : sidebarPreference)
+  }
+
+  function setSidebar(open: boolean) {
+    setSidebarOpen(open)
+
+    // Only a choice made with room on screen is a choice about the layout. On a
+    // narrow screen the sidebar is an overlay that is opened to use and
+    // dismissed straight after, and recording that would let one tap on a phone
+    // reconfigure the desktop.
+    if (!isNarrow) {
+      setSidebarPreference(open)
+      writeSidebarPreference(open)
+    }
+  }
+
+  // Arriving by URL rather than from the patient list — a deep link, a
+  // bookmark, a refresh — means nothing has been loaded yet. Selecting a local
+  // bundle in PatientList fills the context before navigating, so that path
+  // never gets here with an empty one.
   useEffect(() => {
-    if (patient) {
-      setSettled(false)
-      if (timerRef.current) clearTimeout(timerRef.current)
+    if (patient || isLoading || !id || requestedId.current === id) {
       return
     }
-    timerRef.current = setTimeout(() => setSettled(true), 300)
-    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
-  }, [patient])
+
+    requestedId.current = id
+    setLoadError(null)
+
+    getPatientData(id, 'ibd')
+      // `@types/fhir`'s Resource and the library's FhirResource describe the
+      // same JSON, but only the latter carries an index signature, so one is
+      // not assignable to the other. Asserted once, here at the boundary,
+      // rather than loosening either type.
+      .then(resources => loadFromResources(resources as unknown as FhirResource[]))
+      .catch(e => setLoadError(e instanceof Error ? e : new Error(String(e))))
+  }, [patient, isLoading, id, loadFromResources])
 
   if (isLoading) return <PatientLoader />
   if (error) return <PatientError error={error + ''} />
+  if (loadError) return <PatientError error={loadError} />
 
   if (!patient) {
-    if (!settled) return <PatientLoader />
+    // An id is on the URL, so it is being fetched — the empty state below is
+    // for the case where there is nothing to fetch.
+    if (id) return <PatientLoader />
+
     return (
       <div className="flex h-screen overflow-hidden bg-stone-50">
         <main className="flex-1 overflow-auto place-content-center flex flex-col items-center justify-center gap-4">
@@ -125,13 +218,29 @@ export function PatientShell() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-stone-50">
-      <aside className="flex w-56 shrink-0 flex-col border-r border-stone-200 bg-white overflow-y-auto">
-        <PatientHeader patient={patient} />
+    <div className="relative flex h-screen overflow-hidden bg-stone-50">
+      { sidebarOpen && isNarrow && <div className="absolute inset-0 z-10 bg-stone-900/20" onClick={() => setSidebar(false)} /> }
+      <aside
+        className={`flex w-56 shrink-0 flex-col border-r border-stone-200 bg-white overflow-y-auto transition-transform duration-200 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } ${
+          isNarrow ? 'absolute inset-y-0 left-0 z-20 shadow-lg' : sidebarOpen ? '' : 'hidden'
+        }`}
+      >
+        <h1 className='my-5 ms-5 me-2 flex items-center justify-between gap-2'>
+          <div className='font-normal'>
+            <span className='bg-sky-500/20 text-sky-700 py-0.5 px-2 rounded-full border-1 border-sky-700/10 me-2'>IHL</span>IBD App
+          </div>
+          <SidebarToggle onClick={() => setSidebar(false)} />
+        </h1>
         <PatientNav />
         <PatientFooter />
       </aside>
       <main className="flex-1 overflow-auto">
+        <PatientHeader
+          patient={patient}
+          onToggleSidebar={ sidebarOpen && !isNarrow ? undefined : () => setSidebar(!sidebarOpen) }
+        />
         <Outlet />
       </main>
     </div>
