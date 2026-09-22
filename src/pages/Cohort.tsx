@@ -35,12 +35,19 @@ interface CohortOutcome {
 
 const COHORT = {
     size    : 15236,
-    criteria: [
-        ['age at IBD diagnosis', '0-6 years'      ],
-        ['birth sex'           , 'female'         ],
-        ['IBD subtype'         , "Crohn's disease"]
-    ],
+    criteria: {
+        'age at IBD diagnosis': '0-6 years',
+        'birth sex'           : 'female',
+        'IBD subtype'         : "Crohn's disease"
+    } as Record<string, string>,
     outcome : 'steroid-free remission at 12 months'
+}
+
+/** The choices each fixed filter can take, for the edit dialog's selects. */
+const CRITERION_OPTIONS: Record<string, string[]> = {
+    'age at IBD diagnosis': ['0-6 years', '7-12 years', '13-17 years', '18+ years'],
+    'birth sex'           : ['female', 'male'],
+    'IBD subtype'         : ["Crohn's disease", 'Ulcerative colitis', 'IBD-unclassified']
 }
 
 const OUTCOMES: CohortOutcome[] = [
@@ -180,6 +187,90 @@ function OutcomeRow({ outcome }: { outcome: CohortOutcome }) {
     )
 }
 
+/** One row of the fixed filter list: on/off plus its current value. */
+interface CriterionState {
+    value  : string
+    enabled: boolean
+}
+
+/**
+ * Edits which of the fixed set of cohort filters apply, and their values.
+ *
+ * The filter names themselves come from a fixed list — there's no API yet to
+ * discover what filters exist, so the set can't grow here. Once a real
+ * endpoint backs this, the response's "filters applied" list replaces this
+ * optimistic local state.
+ */
+function EditCriteriaDialog({
+    criteria,
+    onSubmit,
+    onCancel
+}: {
+    criteria: Record<string, CriterionState>
+    onSubmit: (criteria: Record<string, CriterionState>) => void
+    onCancel: () => void
+}) {
+    const [draft, setDraft] = useState(criteria)
+
+    function updateValue(name: string, value: string) {
+        setDraft({ ...draft, [name]: { ...draft[name], value } })
+    }
+
+    function toggleEnabled(name: string) {
+        setDraft({ ...draft, [name]: { ...draft[name], enabled: !draft[name].enabled } })
+    }
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+            <div className="w-full max-w-lg rounded-lg bg-white p-5 shadow-lg ring-1 ring-black/5">
+                <h3 className="mb-4 font-bold text-lg text-stone-900">Edit Similarity Criteria</h3>
+
+                <div className="flex flex-col gap-2">
+                    { Object.entries(draft).map(([name, { value, enabled }]) => (
+                        <div key={name} className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                className="h-4 w-4"
+                                checked={enabled}
+                                onChange={() => toggleEnabled(name)}
+                                aria-label={`Include ${name}`}
+                            />
+                            <span className="w-1/2 text-sm text-stone-700">{name}</span>
+                            <select
+                                className="w-1/2 rounded border border-stone-200 px-2 py-1 text-sm disabled:bg-stone-50 disabled:text-stone-400"
+                                value={value}
+                                disabled={!enabled}
+                                onChange={e => updateValue(name, e.target.value)}
+                            >
+                                { CRITERION_OPTIONS[name].map(option => (
+                                    <option key={option} value={option}>{option}</option>
+                                )) }
+                            </select>
+                        </div>
+                    )) }
+                </div>
+
+                <div className="mt-5 flex justify-end gap-2">
+                    <button
+                        type="button"
+                        className="rounded px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-100"
+                        onClick={onCancel}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
+                        onClick={() => onSubmit(draft)}
+                    >
+                        Apply
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 /** The same numbers as a table — the accessible reading of the chart above. */
 function OutcomeTable() {
     return (
@@ -210,7 +301,16 @@ function OutcomeTable() {
 }
 
 export function CohortPage() {
-    const criteria = COHORT.criteria.map(([name, value]) => `${name}: ${value}`).join('; ')
+    const [criteriaState, setCriteriaState] = useState<Record<string, CriterionState>>(
+        () => Object.fromEntries(
+            Object.entries(COHORT.criteria).map(([name, value]) => [name, { value, enabled: true }])
+        )
+    )
+    const [editingCriteria, setEditingCriteria] = useState(false)
+    const criteria = Object.entries(criteriaState)
+        .filter(([, { enabled }]) => enabled)
+        .map(([name, { value }]) => `${name}: ${value}`)
+        .join('; ')
     const axisRef  = useRef<HTMLDivElement>(null)
     const ticks    = useTicks(axisRef)
     const { patient } = useClinicalData()
@@ -222,11 +322,31 @@ export function CohortPage() {
     return (
         <div className="p-6">
             <div className="mx-auto max-w-4xl rounded-lg bg-slate-50 p-6">
-                <p className="mb-5 text-sm leading-relaxed text-stone-600">
+                <p className="mb-3 text-sm leading-relaxed text-stone-600">
                     For patients (N={COHORT.size.toLocaleString()}) like {name} who meet the
                     following criteria ({criteria}) the chart below shows the likelihood of
                     achieving {COHORT.outcome} based on treatment.
                 </p>
+
+                <button
+                    type="button"
+                    // className="mb-5 rounded border border-stone-200 bg-white px-3 py-1.5 text-sm text-stone-700 shadow-xs hover:bg-stone-50"
+                       className="mb-5 rounded bg-sky-100 px-3 py-1.5 text-sm text-sky-700 hover:bg-sky-200"
+                    onClick={() => setEditingCriteria(true)}
+                >
+                    Edit Similarity Criteria
+                </button>
+
+                { editingCriteria && (
+                    <EditCriteriaDialog
+                        criteria={criteriaState}
+                        onCancel={() => setEditingCriteria(false)}
+                        onSubmit={updated => {
+                            setCriteriaState(updated)
+                            setEditingCriteria(false)
+                        }}
+                    />
+                ) }
 
                 <div className="rounded-lg bg-white p-5 shadow-xs ring-1 ring-black/5">
                     <div className="mb-4 flex items-baseline justify-between gap-4">
