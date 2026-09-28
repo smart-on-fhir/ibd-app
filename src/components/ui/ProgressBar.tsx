@@ -6,7 +6,7 @@ export function ProgressBar({ value, label }: { value: number; label?: string })
       { label && <p className="text-sm text-gray-500">{label}</p> }
       <div className="h-2 w-full rounded-full bg-gray-200 overflow-hidden">
         <div
-          className="h-full rounded-full bg-indigo-600 transition-[width] duration-200 ease-out"
+          className="h-full rounded-full bg-lime-600 transition-[width] duration-200 ease-out"
           style={{ width: `${clamped}%` }}
           role="progressbar"
           aria-valuenow={clamped}

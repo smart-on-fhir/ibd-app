@@ -2,8 +2,7 @@ import type { Patient }                from 'fhir/r4'
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router'
 import { useClinicalData, lib }        from 'clinical-primitives'
-import type { FhirResource }           from 'clinical-primitives'
-import { Sidebar, UserCircle, UserCircleIcon }  from 'lucide-react'
+import { ChartColumnDecreasing, Clock, Search, Sidebar, UserCircle, UserCircleIcon, Users, FileText }  from 'lucide-react'
 import { Spinner }                     from '../components/ui/Spinner'
 import { ErrorMessage }                from '../components/ui/ErrorMessage'
 import { useMediaQuery }               from '../hooks/useMediaQuery'
@@ -46,22 +45,23 @@ function SidebarToggle({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       aria-label="Toggle sidebar"
       data-tooltip="Toggle sidebar"
-      className="text-stone-500 hover:bg-stone-200 rounded p-0.5 cursor-pointer"
+      className="text-stone-300 hover:text-stone-500 hover:bg-stone-200 rounded p-0.5 cursor-pointer"
     >
       <Sidebar strokeWidth={1} />
     </button>
   )
 }
 
-function NavItem({ to, label }: { to: string; label: string }) {
+function NavItem({ to, label, icon }: { to: string; label: string, icon: React.ReactNode }) {
   return (
     <NavLink to={to} end className={({ isActive }) =>
-        `block rounded-md px-3 py-1.5 text-sm ${isActive
-            ? 'bg-sky-100 font-medium text-sky-800'
-            : 'text-gray-600 hover:bg-stone-100 hover:text-stone-900'
+        `flex items-center gap-1 rounded-md px-3 py-1.5 text-sm border ${isActive
+            ? 'bg-slate-200 font-semibold text-slate-800 border-slate-300'
+            : 'text-slate-500 hover:bg-slate-200/50 hover:text-slate-900 border-transparent'
         }`
       }
     >
+      {icon}
       {label}
     </NavLink>
   )
@@ -124,12 +124,11 @@ function PatientNav() {
   const base = `/patients/${id}`
   return (
     <nav className="flex-1 space-y-1 px-2 py-3">
-      <NavItem to={base} label="Patient Dashboard" />
-      <NavItem to={`${base}/timeline`} label="Timeline" />
-      <NavItem to={`${base}/cohort`}   label="Cohort" />
-      <NavItem to={`${base}/survival`} label="Survival" />
-      <NavItem to={`${base}/search`}   label="Search" />
-      <NavItem to={`${base}/notes`}    label="Clinical Notes" />
+      <NavItem to={base}               icon={<Clock className="inline-block h-4 w-4 mr-1" />} label="IBD Timeline" />
+      <NavItem to={`${base}/cohort`}   icon={<Users className="inline-block h-4 w-4 mr-1" />} label="Similarity Cohort" />
+      <NavItem to={`${base}/survival`} icon={<ChartColumnDecreasing className="inline-block h-4 w-4 mr-1" />} label="Survival Analysis" />
+      <NavItem to={`${base}/search`}   icon={<Search className="inline-block h-4 w-4 mr-1" />} label="Health Record Search" />
+      <NavItem to={`${base}/notes`}    icon={<FileText className="inline-block h-4 w-4 mr-1" />} label="Clinical Notes" />
     </nav>
   )
 }
@@ -218,25 +217,25 @@ export function PatientShell() {
   }
 
   return (
-    <div className="relative flex h-screen overflow-hidden bg-stone-50">
-      { sidebarOpen && isNarrow && <div className="absolute inset-0 z-10 bg-stone-900/20" onClick={() => setSidebar(false)} /> }
+    <div className="relative flex h-screen overflow-hidden bg-stone-100/80 text-slate-600">
+      { sidebarOpen && isNarrow && <div className="absolute inset-0 z-2000 bg-stone-900/20" onClick={() => setSidebar(false)} /> }
       <aside
-        className={`flex w-56 shrink-0 flex-col border-r border-stone-200 bg-white overflow-y-auto transition-transform duration-200 ${
+        className={`flex w-56 shrink-0 flex-col overflow-y-auto transition-transform duration-200 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } ${
-          isNarrow ? 'absolute inset-y-0 left-0 z-20 shadow-lg' : sidebarOpen ? '' : 'hidden'
+          isNarrow ? 'absolute inset-y-0 left-0 z-2000 shadow-lg bg-stone-100 ' + (sidebarOpen ? 'ring-1 ring-stone-400/20' : '') : sidebarOpen ? '' : 'hidden'
         }`}
       >
         <h1 className='my-5 ms-5 me-2 flex items-center justify-between gap-2'>
-          <div className='font-normal'>
-            <span className='bg-sky-500/20 text-sky-700 py-0.5 px-2 rounded-full border-1 border-sky-700/10 me-2'>IHL</span>IBD App
+          <div className='font-semibold text-slate-600'>
+            IHL IBD APP
           </div>
           <SidebarToggle onClick={() => setSidebar(false)} />
         </h1>
         <PatientNav />
         <PatientFooter />
       </aside>
-      <main className="flex-1 overflow-auto">
+      <main className={ "flex-1 overflow-auto bg-white p-6" + (isNarrow ? "" : " border m-1 rounded-lg border-stone-200") }>
         <PatientHeader
           patient={patient}
           onToggleSidebar={ sidebarOpen && !isNarrow ? undefined : () => setSidebar(!sidebarOpen) }

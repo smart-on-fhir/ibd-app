@@ -21,7 +21,7 @@ const COLORS = [
     '#2563eb',
     '#16a34a',
     '#d97706',
-    '#9333ea',
+    '#bc3cef',
     '#dc2626',
     '#0891b2',
     '#4f46e5'
@@ -298,11 +298,11 @@ export function SurvivalPage() {
     const visibleCurves = curves.filter(curve => !hiddenSeries.has(curve.label))
 
     return (
-        <div className="p-6">
-            <div className="mx-auto max-w-4xl rounded-lg bg-white p-5 shadow-xs">
+        <div className="pt-6">
+            <div className="mx-auto max-w-4xl">
                 <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
                     <div>
-                        <h2 className="text-sm font-semibold text-stone-900">
+                        <h2 className="text-lg font-semibold text-stone-900">
                             Event-free survival
                         </h2>
                         <p className="text-xs text-stone-400">

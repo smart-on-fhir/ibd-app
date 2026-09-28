@@ -221,7 +221,7 @@ function EditCriteriaDialog({
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+        <div className="fixed inset-0 z-5000 flex items-center justify-center bg-black/30 p-4">
             <div className="w-full max-w-lg rounded-lg bg-white p-5 shadow-lg ring-1 ring-black/5">
                 <h3 className="mb-4 font-bold text-lg text-stone-900">Edit Similarity Criteria</h3>
 
@@ -320,8 +320,8 @@ export function CohortPage() {
     const name = (patient.name?.[0]?.given || []).map(n => n.trim()).join(' ')
 
     return (
-        <div className="p-6">
-            <div className="mx-auto max-w-4xl rounded-lg bg-slate-50 p-6">
+        <div className="pt-6">
+            <div className="mx-auto max-w-4xl">
                 <p className="mb-3 text-sm leading-relaxed text-stone-600">
                     For patients (N={COHORT.size.toLocaleString()}) like {name} who meet the
                     following criteria ({criteria}) the chart below shows the likelihood of
@@ -331,7 +331,7 @@ export function CohortPage() {
                 <button
                     type="button"
                     // className="mb-5 rounded border border-stone-200 bg-white px-3 py-1.5 text-sm text-stone-700 shadow-xs hover:bg-stone-50"
-                       className="mb-5 rounded bg-sky-100 px-3 py-1.5 text-sm text-sky-700 hover:bg-sky-200"
+                       className="mb-5 rounded bg-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:text-slate-800 border border-slate-300 hover:border-slate-400 cursor-pointer"
                     onClick={() => setEditingCriteria(true)}
                 >
                     Edit Similarity Criteria
@@ -348,8 +348,8 @@ export function CohortPage() {
                     />
                 ) }
 
-                <div className="rounded-lg bg-white p-5 shadow-xs ring-1 ring-black/5">
-                    <div className="mb-4 flex items-baseline justify-between gap-4">
+                <div>
+                    <div className="my-6 flex items-baseline justify-between gap-4">
                         <div>
                             <h2 className="font-bold text-xl text-stone-900 leading-none mb-1">
                                 Expected outcome by treatment option
