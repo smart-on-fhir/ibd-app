@@ -1,11 +1,12 @@
-import { useMemo, useState }            from 'react'
-import type { Attachment }              from 'fhir/r4'
-import { ExternalLink, File, FileText } from 'lucide-react'
-import { isIBDPanelObservation }        from '../modules/ibd/utils'
-import type { FHIRResourceMap }         from '../types/fhir'
+import { useMemo, useState }     from 'react'
+import type { Attachment }       from 'fhir/r4'
+import { File, FileText }        from 'lucide-react'
+import { isIBDPanelObservation } from '../modules/ibd/utils'
+import type { FHIRResourceMap }  from '../types/fhir'
+import { Preload }               from '../components/Preload'
 import {
-    AttachmentPreview, Collapse, FhirResourceJsonViewer, SourceDialog,
-    TimelineChart, useClinicalData, lib as cp
+    AttachmentPreview, Collapse, ResourceSource, TimelineChart,
+    useClinicalData, lib as cp
 } from 'clinical-primitives'
 import {
     collectClinicalNotes, resolveAttachment, type ClinicalNote
@@ -118,18 +119,17 @@ function AttachmentItem({ attachment, resources }: {
  *
  * The source view is not a debugging aid here: a note that shows no text is
  * indistinguishable from one that has none until you can see the resource, so
- * the same Source collapse and dialog the library's own detail panels use.
+ * it gets the same Source entry the library's own detail panels use.
  */
 function NoteDetail({ note }: { note: ClinicalNote }) {
     const { resources } = useClinicalData()
-    const [sourceDialogOpen, setSourceDialogOpen] = useState(false)
 
     // Where the body is finally decoded — one note, the one being read. Held
     // by the note itself afterwards, so reselecting it costs nothing.
     const text = note.text()
 
     return (
-        <div className="cp-timeline-selection-detail space-y-3">
+        <div className="cp-resource-detail space-y-3">
             <div>
                 <div className="font-semibold">{note.title}</div>
                 <div className="text-xs text-stone-500">
@@ -164,40 +164,33 @@ function NoteDetail({ note }: { note: ClinicalNote }) {
                 </ul>
             }
 
-            <Collapse
-                label={
-                    <span className="cp-timeline-source-label">
-                        Source
-                        <button
-                            // virtual
-                            title="Open the full resource"
-                            onClick={event => {
-                                // The header itself toggles the collapse, so
-                                // this has to stop or the dialog would open and
-                                // close the tree behind it.
-                                event.stopPropagation()
-                                setSourceDialogOpen(true)
-                            }}
-                        >
-                            <ExternalLink size={13} style={{ display: 'block' }} />
-                        </button>
-                    </span>
-                }
-            >
-                <FhirResourceJsonViewer resource={note.resource} allResources={resources} />
-            </Collapse>
-
-            <SourceDialog
-                open={sourceDialogOpen}
-                onClose={() => setSourceDialogOpen(false)}
-                resource={note.resource}
-            />
+            <ResourceSource resource={note.resource} />
         </div>
     )
 }
 
 export function NotesPage() {
-    const { patient, isLoading, error, resources } = useClinicalData()
+    return (
+        <Preload
+            resourceTypes={[
+                // "Patient",
+                "Observation",
+                // "MedicationRequest",
+                // "Condition",
+                "DiagnosticReport",
+                // "Procedure",
+                "DocumentReference",
+                // "Binary"
+            ]}
+            label="Loading notes…"
+        >
+            <NotesContent />
+        </Preload>
+    )
+}
+
+function NotesContent() {
+    const { resources } = useClinicalData()
 
     // Selection is held here rather than read from the chart: the chart's
     // context hook is not part of the library's public surface. With one
@@ -253,21 +246,9 @@ export function NotesPage() {
 
     const selectedNote = selectedId ? notes.find(note => note.id === selectedId) : undefined
 
-    if (error) {
-        return <div className="p-6 text-red-600">Error: {error.message}</div>
-    }
-
-    if (isLoading) {
-        return <div className="p-6">Loading...</div>
-    }
-
-    if (!patient) {
-        return <div className="p-6">No patient selected.</div>
-    }
-
     return (
-        <div className="p-6">
-            <div className="card bg-white rounded-md border border-stone-200 shadow-xs p-6">
+        <div className="pt-6">
+            <div>
                 <TimelineChart
                     title={<h3 className="flex items-center gap-2"><FileText /> Clinical Notes</h3>}
                 >
