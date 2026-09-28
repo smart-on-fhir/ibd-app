@@ -86,14 +86,14 @@ function PatientError({ error }: { error: Error | string }) {
 
 function PatientHeader({ patient, onToggleSidebar }: { patient: Patient; onToggleSidebar?: () => void }) {
   return (
-    <div className="border-b border-stone-200 px-2 py-4 flex items-center gap-2">
+    <div className="flex items-center gap-2 border-b border-stone-200 bg-white -mt-6 -mx-6 p-6 sticky -top-6 z-20">
       { onToggleSidebar && <SidebarToggle onClick={onToggleSidebar} /> }
       <div>
-        <UserCircle className="h-9 w-9 text-stone-400 fill-stone-400/20" strokeWidth={0.5} />
+        <UserCircle className="h-10 w-10 text-slate-500 fill-slate-400/10" strokeWidth={0.75} />
       </div>
       <div className="min-w-0">
         <div className="flex items-center gap-1.5">
-          <div className="truncate font-semibold text-stone-900 text-sm min-w-0">
+          <div className="truncate font-semibold text-stone-900 text-base min-w-0">
             { lib.Person.displayPersonName(patient) }
           </div>
         </div>
