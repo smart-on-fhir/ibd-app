@@ -5,3 +5,39 @@
   display: flex;
   flex-wrap: nowrap;
 }
+
+/* Query matches inside panels that render text they know nothing about — see
+   useTextHighlight. Same colors as the <mark> in search results; a ::highlight
+   takes only colors and decorations, so no ring or rounding. */
+::highlight(search-match) {
+  background-color: var(--color-yellow-200, #fef08a);
+  color: var(--color-yellow-950, #422006);
+}
+
+/* Markdown notes — see NoteText. Plain CSS, not utilities: notes render inside
+   library panels, and the library's reset (unlayered) would beat anything in
+   Tailwind's layers there. */
+.note-markdown > * + * {
+  margin-top: 0.5em;
+}
+.note-markdown h4 {
+  margin-top: 1em;
+  font-size: 1.05em;
+  font-weight: 600;
+}
+.note-markdown h4:first-child {
+  margin-top: 0;
+}
+.note-markdown ul,
+.note-markdown ol {
+  padding-left: 1.25em;
+}
+.note-markdown ul {
+  list-style: disc;
+}
+.note-markdown ol {
+  list-style: decimal;
+}
+.note-markdown li + li {
+  margin-top: 0.15em;
+}
