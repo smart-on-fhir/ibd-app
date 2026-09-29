@@ -1,12 +1,16 @@
 import type { Patient }                from 'fhir/r4'
-import { useEffect, useRef, useState } from 'react'
-import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router'
+import { useEffect, useState }         from 'react'
 import { useClinicalData, lib }        from 'clinical-primitives'
-import { ChartColumnDecreasing, Clock, Search, Sidebar, UserCircle, UserCircleIcon, Users, FileText }  from 'lucide-react'
 import { Spinner }                     from '../components/ui/Spinner'
 import { ErrorMessage }                from '../components/ui/ErrorMessage'
 import { useMediaQuery }               from '../hooks/useMediaQuery'
-import { getPatientData }             from '../api/ihl'
+import { getPatient as fetchPatient }  from '../api/ihl'
+import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router'
+import {
+  ChartColumnDecreasing, Clock, Search, Sidebar, UserCircle, UserCircleIcon,
+  Users, FileText
+}  from 'lucide-react'
+
 
 // Vertical iPad (1024px tall side up) and anything narrower gets a collapsed sidebar
 const NARROW_SCREEN = '(max-width: 1024px)'
@@ -135,7 +139,7 @@ function PatientNav() {
 
 
 export function PatientShell() {
-  const { patient, isLoading, error, loadFromResources } = useClinicalData();
+  const { patient, isLoading, error, getPatient } = useClinicalData();
   const { id }                        = useParams<{ id: string }>()
   const isNarrow                      = useMediaQuery(NARROW_SCREEN)
   // The stored preference is state rather than a ref: it is read while
@@ -145,11 +149,6 @@ export function PatientShell() {
   const [sidebarOpen, setSidebarOpen] = useState(() => !isNarrow && sidebarPreference)
   const [wasNarrow, setWasNarrow]     = useState(isNarrow)
   const [loadError, setLoadError]     = useState<Error | null>(null)
-
-  // Which id has already been asked for. A ref rather than state because it
-  // must not cause a render: it exists to stop the effect below from asking
-  // twice — including after a failure, which would otherwise retry forever.
-  const requestedId = useRef<string | null>(null)
 
   // Crossing the breakpoint may close the sidebar but never opens it against
   // the reader's wishes: going narrow collapses it because there is no room,
@@ -177,23 +176,16 @@ export function PatientShell() {
   // Arriving by URL rather than from the patient list — a deep link, a
   // bookmark, a refresh — means nothing has been loaded yet. Selecting a local
   // bundle in PatientList fills the context before navigating, so that path
-  // never gets here with an empty one.
+  // never gets here with an empty one. getPatient() itself no-ops once
+  // `patient.id` already matches, so there's no need to track what's been
+  // requested separately here.
   useEffect(() => {
-    if (patient || isLoading || !id || requestedId.current === id) {
-      return
-    }
+    if (!id) return
 
-    requestedId.current = id
     setLoadError(null)
-
-    getPatientData(id, 'ibd')
-      // `@types/fhir`'s Resource and the library's FhirResource describe the
-      // same JSON, but only the latter carries an index signature, so one is
-      // not assignable to the other. Asserted once, here at the boundary,
-      // rather than loosening either type.
-      .then(resources => loadFromResources(resources as unknown as FhirResource[]))
+    getPatient(id, () => fetchPatient(id, 'sim-ibd-patients'))
       .catch(e => setLoadError(e instanceof Error ? e : new Error(String(e))))
-  }, [patient, isLoading, id, loadFromResources])
+  }, [id, getPatient])
 
   if (isLoading) return <PatientLoader />
   if (error) return <PatientError error={error + ''} />
