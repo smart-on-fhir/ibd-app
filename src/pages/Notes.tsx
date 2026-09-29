@@ -4,12 +4,13 @@ import { File, FileText }        from 'lucide-react'
 import { isIBDPanelObservation } from '../modules/ibd/utils'
 import type { FHIRResourceMap }  from '../types/fhir'
 import { Preload }               from '../components/Preload'
+import { NoteText }              from '../components/NoteText'
 import {
     AttachmentPreview, Collapse, ResourceSource, TimelineChart,
     useClinicalData, lib as cp
 } from 'clinical-primitives'
 import {
-    collectClinicalNotes, resolveAttachment, type ClinicalNote
+    collectClinicalNotes, isMarkdownNote, resolveAttachment, type ClinicalNote
 } from '../lib/clinicalNotes'
 
 
@@ -138,17 +139,17 @@ function NoteDetail({ note }: { note: ClinicalNote }) {
             </div>
 
             { text ?
-                // Pre-wrapped rather than reflowed: clinical notes carry meaning
-                // in their line breaks — headed sections, lists, vitals blocks.
-                <pre className="whitespace-pre-wrap font-sans leading-tight text-sky-800" style={{
+                // Line breaks kept either way: clinical notes carry meaning in
+                // them — headed sections, lists, vitals blocks.
+                <div className="leading-tight text-sky-800" style={{
                     fontSize    : "80%",
                     borderTop   : '1px solid var(--color-stone-300)',
                     borderBottom: '1px solid var(--color-stone-300)',
                     padding     : '0.5rem 0',
                     margin      : '0.5rem 0'
                 }}>
-                    {text}
-                </pre> :
+                    <NoteText text={text} markdown={isMarkdownNote(text, note.resource)} />
+                </div> :
                 <p className="text-sm text-stone-500">
                     This note has no inline text.
                     { note.attachments.length > 0 &&
