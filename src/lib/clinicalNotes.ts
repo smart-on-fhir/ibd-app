@@ -241,6 +241,7 @@ export function isTextualAttachment(attachment: Attachment): boolean {
     const contentType = (attachment.contentType ?? 'text/plain').split(';')[0].trim().toLowerCase()
 
     return contentType === 'text/plain'
+        || contentType === 'text/markdown'
         || contentType === 'text/html'
         || contentType === 'application/xhtml+xml'
         || contentType === 'text/xml'
@@ -273,7 +274,8 @@ export function attachmentText(attachment: Attachment, maxBytes?: number): strin
         return ''
     }
 
-    if (contentType === 'text/plain') {
+    // Markdown is kept as written; rendering it is the viewer's call.
+    if (contentType === 'text/plain' || contentType === 'text/markdown') {
         return decoded
     }
 
@@ -291,6 +293,55 @@ export function attachmentText(attachment: Attachment, maxBytes?: number): strin
     } catch {
         return decoded
     }
+}
+
+/** The attachment types whose text a DocumentReference is searched by. */
+const SEARCHABLE_CONTENT_TYPES = new Set(['text/plain', 'text/markdown', 'text/html'])
+
+/**
+ * The full text of a DocumentReference's plain-text and HTML attachments, for
+ * searching it.
+ *
+ * Unlike a note's `text()`, this follows `Binary/…` references into the record:
+ * a search that misses a note because its body sat in a Binary would read as
+ * the note not saying it. Decodes every attachment, so it is for building an
+ * index once, not for rendering.
+ */
+export function documentReferenceText(doc: DocumentReference, resources: FHIRResourceMap): string {
+    const texts = (doc.content ?? []).map(content => {
+        const resolved = resolveAttachment(content.attachment, resources)
+        if (resolved.state !== 'inline') return ''
+
+        // The attachment's own type wins; resolveAttachment falls back to the
+        // Binary's only when the attachment did not state one.
+        const contentType = (resolved.attachment.contentType ?? '').split(';')[0].trim().toLowerCase()
+        if (!SEARCHABLE_CONTENT_TYPES.has(contentType)) return ''
+
+        return attachmentText(resolved.attachment)
+    })
+
+    return collapseBlankLines(texts.filter(Boolean).join('\n\n'))
+}
+
+/**
+ * Whether a note's text should be rendered as Markdown.
+ *
+ * Declared first: an attachment typed `text/markdown` settles it. Failing that,
+ * guessed — generated notes routinely carry Markdown under `text/plain` — and
+ * only from a heading line. A `- ` line alone is ordinary enough in plain notes
+ * that it would half-format them; a line starting `# ` is not.
+ */
+export function isMarkdownNote(text: string, resource?: { resourceType: string }): boolean {
+    const attachments =
+        resource?.resourceType === 'DocumentReference' ? ((resource as DocumentReference).content ?? []).map(c => c.attachment) :
+        resource?.resourceType === 'DiagnosticReport'  ? (resource as DiagnosticReport).presentedForm ?? [] :
+        []
+
+    if (attachments.some(a => (a.contentType ?? '').split(';')[0].trim().toLowerCase() === 'text/markdown')) {
+        return true
+    }
+
+    return /^#{1,6}[ \t]+\S/m.test(text)
 }
 
 /**
