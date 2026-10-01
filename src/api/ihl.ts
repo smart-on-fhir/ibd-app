@@ -52,10 +52,21 @@ export interface IHL_API_Query_Options
 }
 
 
-// const COHORT_ID   = "sim-ibd-patients";
-const USE_VPN     = false;
-const PUBLIC_URL  = "https://dashboard-test.smartcumulus.org/test/fhir/{cohort_id}";
-const PRIVATE_URL = "https://fhmwdbpdmf.execute-api.us-east-1.amazonaws.com/synthetic/{cohort_id}/fhir";
+/**
+ * The FHIR API endpoint, with `{cohort_id}` where the cohort goes. Set in
+ * `.env.local`, and read once at startup — changing it needs a dev-server
+ * restart or a rebuild.
+ */
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+// Warned about up front, so a missing setting shows in the console at load
+// rather than first as a failed request.
+if (!API_BASE_URL) {
+    console.warn(
+        "VITE_API_BASE_URL is not set, so no data can be loaded from the API. " +
+        "Set it in .env.local and restart the dev server."
+    );
+}
 
 /**
  * Cache for the available resource types to avoid redundant network requests.
@@ -70,8 +81,14 @@ let _availableResourceTypes: Promise<string[]> | null = null;
  * @returns The constructed URL object.
  */
 function buildUrl(cohortId: string, path: string, queryParams?: Record<string, string | number | boolean | undefined>): URL {
+    // Thrown rather than left to `new URL()`, whose "Invalid URL" would not
+    // say which setting is missing.
+    if (!API_BASE_URL) {
+        throw new Error("Cannot reach the API: VITE_API_BASE_URL is not set in .env.local.");
+    }
+
     const url = new URL(
-        String(USE_VPN ? PRIVATE_URL : PUBLIC_URL)
+        API_BASE_URL
         .replace("{cohort_id}", cohortId)
         .replace(/\/$/, "")
         + '/' + path.replace(/^\/+/, "")
