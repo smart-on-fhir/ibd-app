@@ -134,17 +134,22 @@ console and every data request fails with a message naming the setting.
 | ----------------- | ------------------------------------------------------------ |
 | `npm run dev`     | Start the Vite dev server with hot reload.                   |
 | `npm run build`   | Type-check with `tsc`, then build for production into `dist/`. |
-| `npm run preview` | Serve the production build locally.                          |
+| `npm run preview` | Serve the production build locally with Vite.                |
+| `npm start`       | Serve `dist/` in production, on `$PORT` (default 3000).      |
 | `npm run lint`    | Run ESLint over the project.                                 |
 
 ## Deployment
 
-`npm run build` produces a static site in `dist/`. Set `VITE_API_BASE_URL` in
-the build environment, since it is baked in at build time.
+`npm run build` produces a static site in `dist/`, and `npm start` serves it
+with [serve](https://github.com/vercel/serve) on the port in `$PORT`.
 
-The app uses client-side routing (`/patients/:id/notes` and similar), so the
-web server must answer unknown paths with `index.html`. Without that fallback,
-reloading any page other than the root returns a 404.
+Two things to keep in mind on any host:
+
+- **`VITE_API_BASE_URL` is baked in at build time.** Set it in the build
+  environment, and rebuild after changing it.
+- **Unknown paths must return `index.html`.** The app uses client-side routing
+  (`/patients/:id/notes` and similar), so reloading a deep link would otherwise
+  return a 404. `npm start` already does this.
 
 ## Project structure
 
