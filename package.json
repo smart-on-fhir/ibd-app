@@ -1,5 +1,5 @@
 {
-  "name": "ihl-cds",
+  "name": "ibd-app",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@types/fhir": "^0.0.44",
+    "clinical-primitives": "github:smart-on-fhir/clinical-primitives",
     "lucide-react": "^1.22.0",
     "promise-retry": "^2.0.1",
     "react": "^19.2.6",
@@ -34,5 +35,8 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12"
+  },
+  "overrides": {
+    "lightningcss": "^1.33.0"
   }
 }
