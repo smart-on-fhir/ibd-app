@@ -1,16 +1,20 @@
-import { useEffect, useState, type ReactNode }   from "react"
+import { useEffect, useState }                   from "react"
 import { CircleSmall }                           from "lucide-react";
 import { Loader, SourceDialog, useClinicalData } from "clinical-primitives"
 
 
+/** A single value a summary field reports. */
+type FieldScalar = string | number | boolean | null;
+
 interface Field {
-  value: any;
+  /** Either one value, or named values — with the sources that support them, for some fields. */
+  value: FieldScalar | Record<string, FieldScalar | string[]>;
   category: string;
   label?: string;
   value_display?: string;
   description?: string;
-  sourceRefs?: string[];
   loading?: boolean;
+  source_refs?: string[];
 }
 
 interface SummaryResponse {
@@ -19,155 +23,217 @@ interface SummaryResponse {
 }
 
 const MOCK_SUMMARY_RESPONSE: SummaryResponse = {
-  
-  "subject_ref": "Patient/Jimmy858-Kristina583-Kutch271",
-
+  "subject_ref": "Patient/9f3abec7a25dfc956460961263e681e6c01eafa5739434d81b8bb905c26a66ea",
   "fields": {
-
-    // DIAGNOSIS ---------------------------------------------------------------
-    
     "ibd_type": {
-      "category": "diagnosis",
-      
-      "value": "CD", // CD | UC | IBDU
-      
-      // [OPTIONAL] Human-readable field label. If not set, apps may infer it
-      // from the key name or use a hard-coded value.
-      "label": "IBD Type", 
-      
-      // [OPTIONAL] Human-readable display value for the IBD type. If not set,
-      // apps may infer it from the value field.
-      // Can be Crohn's Disease | Ulcerative Colitis | Unclassified
-      "value_display": "Crohn's Disease",
-
-      // [OPTIONAL] Longer description prose (markdown enabled)
-      "description": "Based on 358 Condition resources, the most specific subtype identified is Crohn's disease.",
-
-      // [OPTIONAL] Zero or more references to the source resources from which
-      // this field was derived. If provided, the app can show these FHIR
-      // resources in a dedicated source viewer. In this case, IBD Type may
-      // have been from Condition, or a DocumentReference note, whichever
-      // happened earlier.
-      "sourceRefs": [
-
-        // If detected in condition
-        "Condition/7d419faf-4eb8-5194-998c-58636bfc123a",
-
-        // If detected in a document reference note
-        "DocumentReference/7d419faf-4eb8-5194-998c-58636bfc123a"
-      ]
+      "label": "IBD Type",
+      "value": "CD",
+      "category": "Overview",
+      "description": ""
     },
-    
     "diagnosis_date": {
-      "value": "2018-03-24T00:00:00",
-      "category": "diagnosis",
-      "description": "Used 21 condition resources to determine the diagnosis date. The computed duration is based on the interval between the earliest onset date and the current date.",
-      "sourceRefs": [
-        "Condition/d0d87c42-00c8-5a28-bff2-f76dc5c571c8"
-      ]
+      "label": "IBD Diagnosis Date",
+      "value": "2019-09-23",
+      "category": "Overview",
+      "description": ""
     },
-
-    "paris_class": {
-      "value": "L3 B1 G0",
-      "category": "diagnosis",
-      "label": "Paris Classification"
+    "paris_classification": {
+      "label": "Paris Classification",
+      "value": {
+        "paris_age_group": "A1A",
+        "paris_cd_location_ever": "L3",
+        "paris_cd_l4a_ever": null,
+        "paris_cd_l4b_ever": "PRESENT",
+        "paris_cd_behavior_ever": "B3",
+        "paris_cd_perianal_ever": null,
+        "paris_uc_extent_ever": null,
+        "paris_uc_severity_ever": null,
+        "paris_growth_ever": "G1",
+        "source_refs": [
+          "DocumentReference/6013df1fdb612dc1c920a7b8eedec991abf4cda3abab525d85d8da16abfd047e",
+          "DocumentReference/9c2a3f509e86b386d74f029ebe937a2b46e057c94c4cbabaed5dede37d472ce2",
+          "DocumentReference/3ae83b0e0566315a29695cd7f3e4140a22a5e67433e947c8d76498a7366101ea",
+          "DocumentReference/3a10a41760967fdccccb8646a40ae705e09aa6b747b474e389e8ecc876e40bda",
+          "DocumentReference/65505905a04657de6fc79c205533c62afdbfd63101ef04ada6e38d9d88428d7b",
+          "DocumentReference/5b4d15835c1b7b793478274c7b0f796fbbdca2eaccd64f9dbc704183b7e63df2",
+          "DocumentReference/d28b361f1cc99325c89acab5e9bfc808f24916a76cb0a8e2fa63edafec3a335c",
+          "DocumentReference/2efa83faa9c6e462c9976d48fe731de2f2b5e380d5a7fde8ac5f9f15cca5f62a",
+          "DocumentReference/1a616d8548f49921db05824b3783ec45fce35221e8d6d4d4fe47bf6543663c44",
+          "DocumentReference/f4ec1d595a2bd8a783bcbffdd4b4746f07de51b7e7224151a52f170355db6648",
+          "DocumentReference/b19806821ecb4b56ff421d4b2b1f207f43b1918a209bcf5701c9953b7c19dd05",
+          "DocumentReference/5305e454b55e55fbc71e2228725a3bd0d347ce05af68aa9b6d04635dd20bca2c",
+          "DocumentReference/07f2143900e693702861daeaae79f48428c449a7edf01b819d63efdc313fc61e",
+          "DocumentReference/58f3f3e5bea4276602875d3327c2e87a5a0b1de83cbebea8cf660a22f3d4e9a2",
+          "DocumentReference/e0b20bb2f8cf52123e27e6b609d248bfab3ac8283971fba051b7400d87bfd8c9",
+          "DocumentReference/9ddfbfecc100770b022774d93cafa65c936b3061e0044a54caf0f3f05d452941",
+          "DocumentReference/ce293e1da82bc4865560ee8c850d5cc4f2625553af57d7960bd73e5cdf87b2eb",
+          "DocumentReference/ed8447cfd755fca77fb55f7eddb3aa8491623e9350b4d158047f5db1c54eae0a",
+          "DocumentReference/702ac7f133ac9254eac26239d43058ec41ea16366ad906528d595374db4b5258",
+          "DocumentReference/adeed5799f432d912dad2190e61c940392933e18ca09b0a4a02376c11620602b",
+          "DocumentReference/88b29593366e5e110f78723b8a7431b7b1022320b44e7bcd5a7efea641ef6a9a",
+          "DocumentReference/edba561d939f1ff65a3dff16c8b585f93b73f58fc5413c0c24201ae44cebd898",
+          "DocumentReference/c4dea8c6e71b4f3ee115a496ec5e52062fc353328e2ef8688a511ac836d15324",
+          "DocumentReference/1fc30eb8d87e702469c48844318051ea77e15f3aefdd634ed2650173416de885",
+          "DocumentReference/5b87a2b5122b6e99b8c209e6667b21e44a12a44fe8368dd3f3f342679c98d107",
+          "DocumentReference/6a9fe15e5c36e2cd6a47d7d4b81cd29fe4474b6587e62f05d7f9cdfe44fb6957",
+          "DocumentReference/9d4fce608e01f471054f4ad6e76868869d70367a575bf685b39feaa6d1279b97",
+          "DocumentReference/7468073a96d9726709677979f4f50c80531bc9ce17cb66154f7bf327d709bc8d",
+          "DocumentReference/ac291c7c794bcc6b050199a093ee682c48666510919ee347192f77cd19bb2f77",
+          "DocumentReference/c1ac866b31e01927dc315f259738669abbef8caf346496de604fb3e067e364bb",
+          "DocumentReference/93e27e9fd85ac6545091e5e2f27ac116db37d57b543549a9c53d7d002d1d954e",
+          "DocumentReference/62d026ff6f1e884c0de7e6d6ddc110e94098be217ee9ebb7a100c11d482bcea2",
+          "DocumentReference/96fd9c30b68076c73bab27617e21ed0fb5b5bc0e2f4e727449ee13ecac44f541",
+          "DocumentReference/397c0a7b40cb90aa0d18b634054c436ca8672a7119df97b66ef30f5be8cc3954",
+          "DocumentReference/5a0b29ce2f2b47427de66b330c19d045c10fd5ec97add090104a52bfc9685582"
+        ]
+      },
+      "category": "Overview",
+      "description": "",
+      "value_display": "A1A L3 B3 G1",
     },
-
-    "endoscopy": {
-      "value": "Sep 2024, SEC-CD 8",
-      "category": "diagnosis",
-      "label": "Latest Endoscopy"
+    "endoscopy_details": {
+      "label": "Endoscopy Details",
+      "value": {
+        "note_author_date": "2020-08-01",
+        "sescd_total": 17,
+      },
+      "source_refs": ["DocumentReference/88b29593366e5e110f78723b8a7431b7b1022320b44e7bcd5a7efea641ef6a9a"],
+      "category": "Overview",
+      "description": ""
     },
-
     "activity_index": {
-      "value": "HBI 9 (moderate)",
-      "category": "diagnosis",
-      "label": "Activity Index"
+      "label": "Activity Index",
+      "value": {
+        "index_name": "PCDAI",
+        "score_date": "2026-07-24",
+        "score": 5,
+        "band": "remission",
+      },
+      "source_refs": ["DocumentReference/96fd9c30b68076c73bab27617e21ed0fb5b5bc0e2f4e727449ee13ecac44f541"],
+      "category": "Overview",
+      "description": "",
+      "value_display": "PCDAI 5 (remission)"
     },
-
-    // CURRENT SYMPTOMS --------------------------------------------------------
-
     "abdominal_pain": {
-      "value": "moderate",
-      "value_display": "Moderate",
-      "category": "symptoms",
+      "label": "Abdominal Pain",
+      "value": {
+        "note_author_date": "2026-06-08",
+        "abdominal_pain": "MODERATE_OR_SEVERE",
+      },
+      "source_refs": ["DocumentReference/7468073a96d9726709677979f4f50c80531bc9ce17cb66154f7bf327d709bc8d"],
+      "category": "Current Symptoms",
+      "value_display": "Moderate or severe",
+      "description": "Moderate or severe pain recorded on 2026-06-08"
     },
-
     "stool_frequency": {
-      "value": "5/day",
-      "category": "symptoms",
-      "label": "Stool Frequency"
+      "label": "Stool Frequency",
+      "value": null,
+      "category": "Current Symptoms",
+      "description": ""
     },
-
     "weight_loss": {
-      "value": "3.2kg",
-      "category": "symptoms",
-      "label": "Weight Loss"
+      "label": "Weight Loss",
+      "value": {
+        "event_date": "2019-10-13",
+        "value_text": "Failure to thrive (child)",
+        "code": "R62.51",
+      },
+      "source_refs": ["Condition/6c1c8eb7ae817d93c27a48b3390743a7b107463dd2fbbede756cea9ece83e182"],
+      "category": "Current Symptoms",
+      "value_display": "R62.51: Failure to thrive (child)",
+      "description": ""
     },
-
     "nocturnal_stool": {
-      "value": true,
-      "value_display": "Yes",
-      "category": "symptoms",
-      "label": "Nocturnal Stool"
+      "label": "Nocturnal Stool",
+      "value": {
+        "note_author_date": "2026-07-24",
+        "nocturnal_stools": "NONE",
+        "stools_per_day": "NOT_ASSESSED",
+      },
+      "source_refs": ["DocumentReference/96fd9c30b68076c73bab27617e21ed0fb5b5bc0e2f4e727449ee13ecac44f541]"],
+      "category": "Current Symptoms",
+      "value_display": "None",
+      "description": ""
     },
-
-    "last_pcdai_value": {
-      "value": "32 moderate",
-      "category": "symptoms"
+    "last_pcdai": {
+      "label": "Last PCDAI",
+      "value": {
+        "event_date": "2026-07-24",
+        "pcdai_total": 5,
+      },
+      "value_display": "PCDAI 5",
+      "source_refs": ["DocumentReference/96fd9c30b68076c73bab27617e21ed0fb5b5bc0e2f4e727449ee13ecac44f541"],
+      "category": "Current Symptoms",
+      "description": ""
     },
-
-    "last_pcdai_date": {
-      "value": "2025-05-24T00:00:00",
-      "category": "symptoms"
-    },
-
-    // KEY FACTS ---------------------------------------------------------------
-    
     "steroid_exposure": {
-      "value": true,
-      "category": "facts",
       "label": "Steroid Exposure",
-      "description": "Steroid exposure detected based on 2 medications. 532 medication records reviewed.",
-      "sourceRefs": [
-        "MedicationRequest/6ba40a42-1b93-5579-90cd-80c055423f5e",
-        "MedicationRequest/27984c11-c120-501a-aaae-d8f64ed9a9f8"
-      ]
+      "value": {
+        "steroid_exposed_bool": true,
+        "first_steroid_date": "2019-10-13",
+        "last_steroid_date": "2026-06-20",
+      },
+      "source_refs": [
+        "DocumentReference/adeed5799f432d912dad2190e61c940392933e18ca09b0a4a02376c11620602b",
+        "DocumentReference/07f2143900e693702861daeaae79f48428c449a7edf01b819d63efdc313fc61e",
+        "DocumentReference/c1ac866b31e01927dc315f259738669abbef8caf346496de604fb3e067e364bb",
+        "DocumentReference/58f3f3e5bea4276602875d3327c2e87a5a0b1de83cbebea8cf660a22f3d4e9a2",
+        "DocumentReference/ed8447cfd755fca77fb55f7eddb3aa8491623e9350b4d158047f5db1c54eae0a",
+        "DocumentReference/9ddfbfecc100770b022774d93cafa65c936b3061e0044a54caf0f3f05d452941",
+        "DocumentReference/e0b20bb2f8cf52123e27e6b609d248bfab3ac8283971fba051b7400d87bfd8c9",
+        "DocumentReference/b19806821ecb4b56ff421d4b2b1f207f43b1918a209bcf5701c9953b7c19dd05",
+        "MedicationRequest/8ad26eb342d588a7dd589a54d2501c28a622c1b1262989c3b1112021f04a8b5e",
+        "MedicationRequest/bd0a0658d244728eb69953748c8538335a48fb1594f2c1248986c200585dca95",
+        "MedicationRequest/0b0754a1d58cf50020e440cc2cdab0148a00aea74c81a9ab3f23e46b722d420a",
+        "MedicationRequest/57cdd8dbab88ec71e515eca72e6ae9cdff130f1b817a2edec205d0a13a9dee7d",
+        "MedicationRequest/4c5e49ab2911038993eef35a9708a6ac4748abf6464a70e989fdb025843b2b87",
+        "DocumentReference/62d026ff6f1e884c0de7e6d6ddc110e94098be217ee9ebb7a100c11d482bcea2",
+        "DocumentReference/6013df1fdb612dc1c920a7b8eedec991abf4cda3abab525d85d8da16abfd047e",
+        "DocumentReference/c4dea8c6e71b4f3ee115a496ec5e52062fc353328e2ef8688a511ac836d15324",
+        "DocumentReference/7468073a96d9726709677979f4f50c80531bc9ce17cb66154f7bf327d709bc8d",
+        "DocumentReference/2efa83faa9c6e462c9976d48fe731de2f2b5e380d5a7fde8ac5f9f15cca5f62a",
+        "MedicationRequest/5511e5aa74ce1592868c9d53336ad69dcdf1728adc08784403215be1b40485b1",
+        "MedicationRequest/f05bcc28d081fb0a86161bb9f448e4a0a820c01f7431ecb553dfdf2aaa806c30",
+        "MedicationRequest/71e7717f09355c34ff9585c68d52e70b948600b3d68909ffa9679c1c4a3d2f1c"
+      ],
+      "category": "Key Facts",
+      "description": ""
     },
-
-    // FIXME: IMPOSSIBLE FOR NOW
-    // "medication_adherence": {
-    //   "value": "good",
-    //   "category": "facts",
-    //   "label": "Adherence",
-    //   "value_display": "Good"
-    // },
-  
-    "prior_surgery_date": {
-      "value": "2020-04-18T00:00:00",
-      "category": "facts",
-      "sourceRefs": [
-        "Procedure/afea2f4f-da98-5cd6-bbea-accaa00b3186"
-      ]
+    "prior_surgery": {
+      "label": "Prior Surgery",
+      "value": {
+        "prior_surgery_bool": false,
+        "first_qualifying_surgery_date": null,
+        "first_qualifying_surgery_type": null,
+      },
+      "source_refs": [],
+      "category": "Key Facts",
+      "description": ""
     },
-
-    "prior_surgery_type": {
-      "value": "COLECTOMY",
-      "category": "facts",
-      "sourceRefs": [
-        "Procedure/afea2f4f-da98-5cd6-bbea-accaa00b3186"
-      ]
-    },
-
     "perianal_disease": {
-      "value": false,
-      "category": "facts",
       "label": "Perianal Disease",
-      "description": "**Perianal disease not detected.**\n\nBased on ICD codes and text descriptions, we didn't find evidence of perianal disease.",
-      "sourceRefs": []
+      "value": {
+        "paris_cd_perianal_ever": null,
+        "latest_coded_perianal_date": null,
+      },
+      "source_refs": [],
+      "category": "Key Facts",
+      "description": "",
+      "value_display": "Never detected"
     }
   }
 };
+
+/**
+ * One named value of a field whose value is an object. Undefined for a field
+ * with a single value, a missing name, or a name holding a list.
+ */
+function valueProp(field: Field | undefined, key: string): FieldScalar | undefined {
+  const value = field?.value;
+  if (value === null || typeof value !== "object") return undefined;
+  const prop = value[key];
+  return Array.isArray(prop) ? undefined : prop;
+}
 
 function durationSince(date: Date): string {
     const now    = Date.now();
@@ -183,27 +249,32 @@ function durationSince(date: Date): string {
         `${years} year${years === 1 ? '' : 's'}, ${rem} month${rem === 1 ? '' : 's'}`;
 }
 
-function SummaryRow({ field, defaults, status, openDialog }: {
-  field: Field,
-  defaults: {
-    label: ReactNode,
-    tooltip?: string | null,
-    render?: (field: Field) => string
-  },
-  status?: "good" | "bad",
-  openDialog: (refs: string[]) => void
+function SummaryRow({
+  field,
+  value         = field.value,
+  value_display = field.value_display,
+  label         = field.label,
+  tooltip       = field.description,
+  status,
+  render,
+  openDialog,
+}: {
+  field         : Field,
+  label        ?: Field["label"],
+  value        ?: Field["value"],
+  value_display?: Field["value_display"],
+  tooltip      ?: Field["description"],
+  render       ?: (field: Field) => string
+  status       ?: "good" | "bad",
+  openDialog    : (refs: string[]) => void
 }) {
 
   if (!field) return null;
-
-  const label   = field.label       || defaults.label;
   
-  let value = defaults.render ? defaults.render(field) : (field.value_display || field.value);
-  if (value === true ) value = "Yes";
-  if (value === false) value = "No";
-  if (value === null ) value = "Unknown";
-  
-  const tooltip = field.description || defaults.tooltip || null;
+  let _value = render ? render(field) : (value_display || value);
+  if (_value === true ) _value = "Yes";
+  if (_value === false) _value = "No";
+  if (_value === null ) _value = "Unknown";
 
   return (
     <tr>
@@ -213,11 +284,11 @@ function SummaryRow({ field, defaults, status, openDialog }: {
           "ms-3 text-nowrap" +
           (tooltip ? " underline underline-offset-3 decoration-stone-200 decoration-dotted hover:decoration-stone-400" : "") +
           (status === "good" ? " text-green-600" : status === "bad" ? " text-amber-600" : "") +
-          (field.sourceRefs?.length ? " cursor-pointer" : "")
+          (field.source_refs?.length ? " cursor-pointer" : "")
         }
         data-tooltip={tooltip || null}
-        onClick={() => field.sourceRefs?.length && openDialog(field.sourceRefs)}>
-        { value === true ? "Yes" : value === false ? "No" : value === null ? "Unknown" : value }
+        onClick={() => field.source_refs?.length && openDialog(field.source_refs)}>
+        { _value + "" }
       </td>
     </tr>
   )
@@ -233,22 +304,21 @@ async function getSummaryResponse(): Promise<typeof MOCK_SUMMARY_RESPONSE> {
  */
 export function IBDSummary() {
   const [open, setOpen] = useState(false);
-  const [selectedResource, setSelectedResource] = useState<any>(null);
+  const [selectedResource, setSelectedResource] = useState<object | null>(null);
   const { resources } = useClinicalData();
   const [response, setResponse] = useState<typeof MOCK_SUMMARY_RESPONSE | null>(null);
 
-
   const openDialog = (refs: string[] = []) => {
     if (!refs.length) return;
-    const collection: any[] = refs.map(r => {
+    const collection = refs.map(r => {
       const [type, id] = r.split('/');
-      return resources[type]?.find((res: any) => res.id === id);
-    }).filter(Boolean);
+      return resources[type]?.find(res => res.id === id);
+    }).filter(res => res !== undefined);
 
     if (!collection.length) return;
 
     if (collection.length > 1) {
-      const obj: any = {}
+      const obj: Record<string, object> = {}
       collection.forEach(item => {
         const key = item.resourceType + "/" + item.id;
         if (!obj[key]) obj[key] = item;
@@ -261,17 +331,17 @@ export function IBDSummary() {
     setOpen(true);
   };
 
+  // Once per mount. Without the dependency list this ran after every render,
+  // re-requesting the summary each time its own response arrived.
   useEffect(() => {
     getSummaryResponse().then(response => {
       setResponse(response);
     });
   }, []);
-  
 
   if (!response) return <Loader centered msg="Loading patient summary..." />;
 
   const { fields } = response;
-  
 
   return (
     <div>
@@ -284,11 +354,17 @@ export function IBDSummary() {
           
           <table className="border-separate border-spacing-1">
             <tbody>
-              <SummaryRow field={fields.ibd_type}       defaults={{ label: "IBD Type" }}         openDialog={openDialog} />
-              <SummaryRow field={fields.diagnosis_date} defaults={{ label: "Duration", render: (field) => durationSince(new Date(field.value)) }} openDialog={openDialog} />
-              <SummaryRow field={fields.paris_class}    defaults={{ label: "Paris Class" }}      openDialog={openDialog} />
-              <SummaryRow field={fields.endoscopy}      defaults={{ label: "Latest Endoscopy" }} openDialog={openDialog} />
-              <SummaryRow field={fields.activity_index} defaults={{ label: "Activity Index" }}   openDialog={openDialog} />
+              <SummaryRow field={fields.ibd_type}             openDialog={openDialog} />
+              <SummaryRow field={fields.diagnosis_date}       openDialog={openDialog} label="Duration" render={(field) => durationSince(new Date(field.value + ""))} />
+              <SummaryRow field={fields.paris_classification} openDialog={openDialog} label="Paris Class" />
+              <SummaryRow
+                field={fields.endoscopy_details}
+                openDialog={openDialog}
+                label="Latest Endoscopy"
+                render={(field) => new Date(valueProp(field, 'note_author_date') as string).toLocaleDateString(undefined, { year: 'numeric', month: 'long' }) + ' SES-CD ' + valueProp(field, 'sescd_total')}
+                tooltip={fields.endoscopy_details?.description || "**Endoscopic Activity Score**\nSimple endoscopic score for Crohn's disease (SES-CD)\n\n- **0-2** = inactive\n- **3-6** = mild\n- **7-15** = moderate\n- **≥16** = severe."}
+              />
+              <SummaryRow field={fields.activity_index} label="Activity Index"   openDialog={openDialog} />
             </tbody>
           </table>
         </div>
@@ -299,19 +375,17 @@ export function IBDSummary() {
           </h4>
           <table className="border-separate border-spacing-1">
             <tbody>
-              <SummaryRow field={fields.abdominal_pain}  defaults={{ label: "Abdominal Pain" }}  openDialog={openDialog} />
-              <SummaryRow field={fields.stool_frequency} defaults={{ label: "Stool Frequency" }} openDialog={openDialog} />
-              <SummaryRow field={fields.weight_loss}     defaults={{ label: "Weight Loss" }}     openDialog={openDialog} />
-              <SummaryRow field={fields.nocturnal_stool} defaults={{ label: "Nocturnal Stool" }} openDialog={openDialog} />
-              <SummaryRow field={fields.last_pcdai_date} defaults={{
-                label: "Last PCDAI",
-                render: (field) => {
+              <SummaryRow field={fields.abdominal_pain}  label="Abdominal Pain"  openDialog={openDialog} />
+              <SummaryRow field={fields.stool_frequency} label="Stool Frequency" openDialog={openDialog} />
+              <SummaryRow field={fields.weight_loss}     label="Weight Loss"     openDialog={openDialog} />
+              <SummaryRow field={fields.nocturnal_stool} label="Nocturnal Stool" openDialog={openDialog} />
+              <SummaryRow field={fields.last_pcdai}      label="Last PCDAI"      openDialog={openDialog} render={(field) => {
                   return[
-                    field.value ? new Date(field.value).toLocaleDateString(undefined, { year: 'numeric', month: 'long' }) : null,
-                    fields.last_pcdai_value?.value_display || fields.last_pcdai_value?.value
+                    field.value ? new Date(valueProp(field, 'event_date') as string).toLocaleDateString(undefined, { year: 'numeric', month: 'long' }) : null,
+                    valueProp(field, 'pcdai_total')
                   ].filter(Boolean).join(", ")
                 }
-              }} openDialog={openDialog} />
+              } />
             </tbody>
           </table>
         </div>
@@ -322,25 +396,37 @@ export function IBDSummary() {
           </h4>
           <table className="border-separate border-spacing-1">
             <tbody>
-              <SummaryRow field={fields.steroid_exposure} defaults={{ label: "Steroid Exposure" }} openDialog={openDialog} status={fields.steroid_exposure.value ? "bad" : "good"} />
-              <SummaryRow field={fields.medication_adherence} defaults={{ label: "Medication Adherence" }} openDialog={openDialog} />
               <SummaryRow
-                field={fields.prior_surgery_date}
-                defaults={{
-                  label: "Prior Surgery", render: field => field.value ? "Yes" : "Unknown",
-                  tooltip: fields.prior_surgery_date.value ? 
-                    `Based on the available records, a surgery of type ${fields.prior_surgery_type?.value || 'Unknown' } was performed in April ${new Date(fields.prior_surgery_date.value).toLocaleString('default', { month: 'long', year: 'numeric' })}.`
-                    : null
-                }}
+                field={fields.steroid_exposure}
                 openDialog={openDialog}
-                status={fields.prior_surgery_date.value ? "bad" : "good"}
+                status={valueProp(fields.steroid_exposure, 'steroid_exposed_bool') ? "bad" : "good"}
+                value={valueProp(fields.steroid_exposure, 'steroid_exposed_bool')}
+                tooltip={fields.steroid_exposure.description || [
+                  valueProp(fields.steroid_exposure, 'first_steroid_date') ? '- First steroid exposure - ' + new Date(valueProp(fields.steroid_exposure, 'first_steroid_date') as string).toLocaleDateString(undefined, { year: 'numeric', month: 'long' }) : null,
+                  valueProp(fields.steroid_exposure, 'last_steroid_date') ? '- Last steroid exposure - ' + new Date(valueProp(fields.steroid_exposure, 'last_steroid_date') as string).toLocaleDateString(undefined, { year: 'numeric', month: 'long' }) : null,
+                ].filter(Boolean).join("\n") }
               />
-              <SummaryRow field={fields.perianal_disease} defaults={{ label: "Perianal Disease" }} openDialog={openDialog} status={fields.perianal_disease.value ? "bad" : "good"} />
+              <SummaryRow
+                field={fields.prior_surgery}
+                value={valueProp(fields.prior_surgery, 'prior_surgery_bool')}
+                status={valueProp(fields.prior_surgery, 'prior_surgery_bool') ? "bad" : "good"}
+                tooltip={valueProp(fields.prior_surgery, 'prior_surgery_bool') ? 
+                    [
+                      `Based on the available records, a surgery`,
+                      valueProp(fields.prior_surgery, 'first_qualifying_surgery_type') ? ` of type ${valueProp(fields.prior_surgery, 'first_qualifying_surgery_type')}` : null,
+                      ` was performed`,
+                      valueProp(fields.prior_surgery, 'first_qualifying_surgery_date') ? ` in ${new Date(valueProp(fields.prior_surgery, 'first_qualifying_surgery_date') as string).toLocaleString('default', { month: 'long', year: 'numeric' })}.` : null
+                    ].filter(Boolean).join(" ")
+                    : `No prior surgery recorded`
+                }
+                openDialog={openDialog}
+              />
+              <SummaryRow field={fields.perianal_disease} openDialog={openDialog} status={valueProp(fields.perianal_disease, 'latest_coded_perianal_date') ? "bad" : "good"} />
             </tbody>
           </table>
         </div>
       </div>
-      <SourceDialog open={open} onClose={() => setOpen(false)} resource={selectedResource} />
+      <SourceDialog open={open} onClose={() => setOpen(false)} resource={selectedResource ?? {}} />
     </div>
   )
 }
