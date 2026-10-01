@@ -104,7 +104,7 @@ export const DEFAULT_SCHEMA: IndexSchema = {
     return {
       label,
       sublabel: r.status,
-      date:     r.performedDateTime ?? (r.performedPeriod as any)?.start,
+      date:     r.performedDateTime ?? r.performedPeriod?.start,
     }
   },
 
@@ -124,7 +124,7 @@ export const DEFAULT_SCHEMA: IndexSchema = {
   },
 
   Encounter: (r: Encounter) => {
-    const label = r.type?.map(codeText).filter(Boolean).join(', ') || codeText(r.class as any)
+    const label = r.type?.map(codeText).filter(Boolean).join(', ') || r.class?.display || r.class?.code
     if (!label) return null
     const reasons = r.reasonCode?.map(codeText).filter(Boolean).join(', ')
     return {

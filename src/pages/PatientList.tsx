@@ -5,26 +5,27 @@ import { lib, useClinicalData }                     from 'clinical-primitives'
 import { Spinner }                                  from '../components/ui/Spinner'
 import { ErrorMessage }                             from '../components/ui/ErrorMessage'
 import { EmptyState }                               from '../components/ui/EmptyState'
-import type { PatientIndexRecord }                  from '../types/api'
+import type { Patient }                             from 'fhir/r4'
 import { getAllPatients }                           from '../api/ihl'
 
 
 export function PatientList() {
   const navigate                = useNavigate()
-  const [patients, setPatients] = useState<PatientIndexRecord[]>([])
+  const [patients, setPatients] = useState<Patient[]>([])
   const [total   , setTotal   ] = useState(0)
-  const [status  , setStatus  ] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
+  // Starts as "loading": the effect below fetches on mount, so there is no
+  // idle moment worth rendering.
+  const [status  , setStatus  ] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error   , setError   ] = useState<string | null>(null)
   const { selectFile, clear } = useClinicalData()
 
   useEffect(() => {
     const controller = new AbortController()
-    setStatus('loading')
     clear();
 
     getAllPatients("sim-ibd-patients", { signal: controller.signal })
       .then(patients => {
-        setPatients(patients as unknown as PatientIndexRecord[])
+        setPatients(patients)
         setTotal(patients.length)
         setStatus('ready')
       })
@@ -36,7 +37,7 @@ export function PatientList() {
       });
     
     return () => controller.abort()
-  }, []);
+  }, [clear]);
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -80,11 +81,11 @@ export function PatientList() {
                     <div className="flex-1 grid w-full items-center gap-x-4 grid-cols-[5em_7em_1fr] sm:grid-cols-[2fr_1fr_1fr] grid-rows-2 sm:grid-rows-1 my-2">
                       <div className="max-w-full truncate flex items-center gap-x-2 col-span-4 sm:col-span-1">
                         <div className="sm:text-sm text-stone-900 max-w-full truncate font-semibold">
-                          {lib.Person.displayPersonName(patient as any)}
+                          {lib.Person.displayPersonName(patient)}
                         </div>
                       </div>
                       <span className="text-xs text-stone-500 sm:w-18 text-nowrap grid-row-2 sm:grid-row-1 grid-col-1 sm:grid-col-2">
-                        {lib.Patient.displayPatientAge(patient as any) || 'no DOB'} {lib.Person.displayPersonGender(patient as any)}
+                        {lib.Patient.displayPatientAge(patient) || 'no DOB'} {lib.Person.displayPersonGender(patient)}
                       </span>
                       <span className="text-xs text-nowrap grid-col-2 sm:grid-col-1 grid-row-2 sm:grid-row-1">
                         <span className="text-stone-400">DOB:</span> <span className="text-stone-500">

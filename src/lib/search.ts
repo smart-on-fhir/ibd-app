@@ -37,8 +37,13 @@ export interface EntryProps {
 export type ResourceExtractor<R extends fhir4.Resource = fhir4.Resource> =
   (resource: R, resources: FHIRResourceMap) => EntryProps | EntryProps[] | null | undefined
 
-/** Map resource type names to their extractor. Omit a type to exclude it entirely. */
-export type IndexSchema = Partial<Record<string, ResourceExtractor<any>>>
+/**
+ * Map resource type names to their extractor. Omit a type to exclude it entirely.
+ *
+ * `never` so an extractor may take its own resource type: a function of a
+ * Condition is a function of `never`, but not of `fhir4.Resource`.
+ */
+export type IndexSchema = Partial<Record<string, ResourceExtractor<never>>>
 
 export function buildSearchIndex(
   resources: FHIRResourceMap,
@@ -58,7 +63,7 @@ export function buildSearchIndex(
         if (!props.label) continue
         entries.push({
           resourceType,
-          resourceId: (resource as any).id ?? '',
+          resourceId: (resource as fhir4.Resource).id ?? '',
           label:      props.label,
           sublabel:   props.sublabel,
           date:       props.date,

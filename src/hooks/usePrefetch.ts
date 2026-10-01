@@ -3,6 +3,14 @@ import { useClinicalData }             from "clinical-primitives";
 import { getAllResourcePages }         from "../api/ihl";
 import type { IHL_API_Query_Options }  from "../api/ihl";
 
+/** Where one prefetch request stands. Tagged with the request it describes. */
+interface PrefetchState {
+    request : string;
+    loading : boolean;
+    error   : Error | null;
+    progress: number;
+}
+
 /**
  * Ensures a set of resource types are loaded into the clinical data context,
  * fetching whichever ones aren't already cached. Wraps the repeated
@@ -21,13 +29,33 @@ export function usePrefetch(
     // fully-cached set doesn't flip loading true then immediately false).
     const needsFetch = () => !!options.force || resourceTypes.some(type => !resources[type]);
 
-    const [loading, setLoading] = useState(needsFetch);
-    const [error, setError] = useState<Error | null>(null);
-    const [progress, setProgress] = useState(() => (needsFetch() ? 0 : 100));
-
     // resourceTypes is typically passed as a fresh array literal on every
-    // render, so the effect keys off its contents rather than its identity.
-    const key = resourceTypes.join(",");
+    // render, so the request is identified by its contents rather than its
+    // identity.
+    const key     = resourceTypes.join(",");
+    const request = `${cohortId}|${key}|${!!options.force}`;
+
+    // Types already cached count as done from the start, since lazy() won't
+    // fetch them; a forced reload counts nothing as done.
+    const startingState = (): PrefetchState => {
+        const cached = options.force ? 0 : resourceTypes.filter(type => resources[type]).length;
+        return {
+            request,
+            loading : needsFetch(),
+            error   : null,
+            progress: !needsFetch() ? 100 : Math.round((cached / resourceTypes.length) * 100)
+        };
+    };
+
+    const [stored, setStored] = useState(startingState);
+
+    // A new request starts from fresh state, reset here during render rather
+    // than in the effect: resetting there would first render the previous
+    // request's state — "loaded", say — for a request that has not started.
+    const state = stored.request === request ? stored : startingState();
+    if (state !== stored) {
+        setStored(state);
+    }
 
     // Per-type fraction (0..1), keyed by resourceType. A ref rather than state:
     // a type with many pages reports progress far too often to route each
@@ -35,25 +63,26 @@ export function usePrefetch(
     const fractions = useRef<Record<string, number>>({});
 
     useEffect(() => {
-        let cancelled = false;
-        fractions.current = {};
-        setError(null);
-
-        function reportProgress() {
-            if (cancelled) return;
-            const total = resourceTypes.reduce((sum, type) => sum + (fractions.current[type] ?? 0), 0);
-            setProgress(resourceTypes.length ? Math.round((total / resourceTypes.length) * 100) : 100);
-        }
-
         if (!needsFetch()) {
-            resourceTypes.forEach(type => { fractions.current[type] = 1; });
-            setProgress(100);
-            setLoading(false);
             return;
         }
 
-        setLoading(true);
-        setProgress(0);
+        let cancelled = false;
+        fractions.current = {};
+
+        // Every update below is scoped to this request, so a slow response
+        // from a request the caller has moved on from cannot overwrite the
+        // state of the current one.
+        const update = (change: Partial<PrefetchState>) => {
+            if (!cancelled) {
+                setStored(prev => prev.request === request ? { ...prev, ...change } : prev);
+            }
+        };
+
+        function reportProgress() {
+            const total = resourceTypes.reduce((sum, type) => sum + (fractions.current[type] ?? 0), 0);
+            update({ progress: resourceTypes.length ? Math.round((total / resourceTypes.length) * 100) : 100 });
+        }
 
         Promise.all(
             resourceTypes.map(resourceType => {
@@ -87,14 +116,12 @@ export function usePrefetch(
                 });
             })
         )
-            .catch(e => { if (!cancelled) setError(e instanceof Error ? e : new Error(String(e))); })
-            .finally(() => { if (!cancelled) { setProgress(100); setLoading(false); } });
-
-        reportProgress();
+            .catch(e => update({ error: e instanceof Error ? e : new Error(String(e)) }))
+            .finally(() => update({ progress: 100, loading: false }));
 
         return () => { cancelled = true; };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [cohortId, key, lazy, options.force]);
+    }, [request, lazy]);
 
-    return { loading, error, progress, resources };
+    return { loading: state.loading, error: state.error, progress: state.progress, resources };
 }

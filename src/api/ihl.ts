@@ -46,7 +46,7 @@ export interface IHL_API_Query_Options
 {
     offset?: number
     limit?: number
-    payload?: any
+    payload?: unknown
     signal?: AbortSignal
     retryOptions?: OperationOptions
 }
@@ -116,7 +116,7 @@ async function fetchWithRetry(input: RequestInfo | URL, init?: RequestInit, retr
  * @param retryOptions Options for retrying the request on failure.
  * @returns The parsed JSON response of type T.
  */
-async function request<T = any>(input: RequestInfo | URL, init?: RequestInit, retryOptions?: OperationOptions): Promise<T> {
+async function request<T = unknown>(input: RequestInfo | URL, init?: RequestInit, retryOptions?: OperationOptions): Promise<T> {
     const res = await fetchWithRetry(input, init, retryOptions);
 
     if (!res.ok) {
@@ -193,7 +193,7 @@ export async function getAllResourcePages(
 ): Promise<FHIRResource[]> {
     const out: FHIRResource[] = [];
 
-    let offset = 0, total = 0;
+    let offset = 0, total: number;
 
     do {
         const json = await getResources(cohortId, resourceType, { ...options, offset });

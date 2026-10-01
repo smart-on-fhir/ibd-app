@@ -1,3 +1,4 @@
+import type { Observation } from "fhir/r4";
 import { CircleSmall } from "lucide-react";
 import { IBDSummary }  from "./IBDSummary";
 import { Preload }     from "../components/Preload";
@@ -126,7 +127,9 @@ function TimelineContent() {
           />
           <TimelineChart.ObservationsTimeline
             label="IBD Observations"
-            observations={(resources.Observation ?? []) as any}
+            // The context types its resources loosely; this list is keyed by
+            // resourceType, so everything in it is an Observation.
+            observations={(resources.Observation ?? []) as unknown as Observation[]}
             analytes={IBD_LAB_PANEL}
           />
         </TimelineChart>

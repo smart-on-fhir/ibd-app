@@ -148,7 +148,10 @@ export function PatientShell() {
   const [sidebarPreference, setSidebarPreference] = useState(readSidebarPreference)
   const [sidebarOpen, setSidebarOpen] = useState(() => !isNarrow && sidebarPreference)
   const [wasNarrow, setWasNarrow]     = useState(isNarrow)
-  const [loadError, setLoadError]     = useState<Error | null>(null)
+  // Tagged with the patient it is about, so moving to another patient drops
+  // the error without an effect having to reset it.
+  const [loadFailure, setLoadFailure] = useState<{ id: string, error: Error } | null>(null)
+  const loadError                     = loadFailure && loadFailure.id === id ? loadFailure.error : null
 
   // Crossing the breakpoint may close the sidebar but never opens it against
   // the reader's wishes: going narrow collapses it because there is no room,
@@ -182,9 +185,8 @@ export function PatientShell() {
   useEffect(() => {
     if (!id) return
 
-    setLoadError(null)
     getPatient(id, () => fetchPatient(id, 'sim-ibd-patients'))
-      .catch(e => setLoadError(e instanceof Error ? e : new Error(String(e))))
+      .catch(e => setLoadFailure({ id, error: e instanceof Error ? e : new Error(String(e)) }))
   }, [id, getPatient])
 
   if (isLoading) return <PatientLoader />
