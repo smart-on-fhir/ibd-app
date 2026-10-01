@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useClinicalData }             from "clinical-primitives";
 import { getAllResourcePages }         from "../api/ihl";
 import type { IHL_API_Query_Options }  from "../api/ihl";
@@ -12,14 +12,43 @@ interface PrefetchState {
 }
 
 /**
+ * Aborts every prefetch started since the last reset.
+ *
+ * The cache is keyed by resource type alone, and clear() empties it but does
+ * not stop fetches already under way, so one finishing late would store a
+ * patient's resources after their record was closed and serve them as the next
+ * patient's. Aborting it instead means nothing gets stored. One controller for
+ * all of them rather than one per hook: fetches are shared between hooks, and
+ * a page unmounting must not abort a fetch the next page is waiting on.
+ */
+let prefetchScope = new AbortController();
+
+/**
+ * Empties the clinical data context, and stops any prefetch still filling it.
+ * Use this rather than the context's clear() whenever the patient changes.
+ */
+export function useResetClinicalData() {
+    const { clear } = useClinicalData();
+    return useCallback(() => {
+        prefetchScope.abort();
+        prefetchScope = new AbortController();
+        clear();
+    }, [clear]);
+}
+
+/**
  * Ensures a set of resource types are loaded into the clinical data context,
  * fetching whichever ones aren't already cached. Wraps the repeated
  * `Promise.all([lazy(...), lazy(...)])` pattern pages were hand-rolling.
+ *
+ * With `patientId`, only that patient's resources are fetched. Already-cached
+ * types are not re-checked against it, so the cache must be reset with
+ * useResetClinicalData() when the patient changes.
  */
 export function usePrefetch(
     cohortId: string,
     resourceTypes: string[],
-    options: Pick<IHL_API_Query_Options, "limit" | "signal"> & { force?: boolean } = {}
+    options: Pick<IHL_API_Query_Options, "limit" | "signal" | "patientId"> & { force?: boolean } = {}
 ) {
     const { resources, lazy } = useClinicalData();
 
@@ -33,7 +62,7 @@ export function usePrefetch(
     // render, so the request is identified by its contents rather than its
     // identity.
     const key     = resourceTypes.join(",");
-    const request = `${cohortId}|${key}|${!!options.force}`;
+    const request = `${cohortId}|${options.patientId ?? ""}|${key}|${!!options.force}`;
 
     // Types already cached count as done from the start, since lazy() won't
     // fetch them; a forced reload counts nothing as done.
@@ -70,6 +99,10 @@ export function usePrefetch(
         let cancelled = false;
         fractions.current = {};
 
+        const signal = options.signal
+            ? AbortSignal.any([prefetchScope.signal, options.signal])
+            : prefetchScope.signal;
+
         // Every update below is scoped to this request, so a slow response
         // from a request the caller has moved on from cannot overwrite the
         // state of the current one.
@@ -98,7 +131,7 @@ export function usePrefetch(
                     () => getAllResourcePages(
                         cohortId,
                         resourceType,
-                        { limit: options.limit ?? 1000, signal: options.signal },
+                        { limit: options.limit ?? 1000, signal, patientId: options.patientId },
                         fraction => {
                             fractions.current[resourceType] = fraction;
                             reportProgress();

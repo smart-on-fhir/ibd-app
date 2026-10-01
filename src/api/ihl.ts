@@ -46,9 +46,25 @@ export interface IHL_API_Query_Options
 {
     offset?: number
     limit?: number
-    payload?: unknown
+    payload?: Record<string, unknown>
     signal?: AbortSignal
     retryOptions?: OperationOptions
+
+    /**
+     * Limits the results to one patient's resources, sent as the `patients`
+     * filter in the request body. The API matches that filter against a
+     * resource's patient reference, so it is no use for Patient itself: see
+     * getAllResourcePages().
+     */
+    patientId?: string
+}
+
+/** The request body: the caller's payload, plus the patient filter if one is given. */
+function requestBody(options: IHL_API_Query_Options): string {
+    const payload = options.patientId
+        ? { ...options.payload, patients: [options.patientId] }
+        : options.payload;
+    return JSON.stringify(payload || {});
 }
 
 
@@ -115,6 +131,10 @@ async function fetchWithRetry(input: RequestInfo | URL, init?: RequestInit, retr
         try {
             res = await fetch(input, init);
         } catch (err) {
+            // Cancelled by the caller: retrying would only fail again.
+            if ((err as Error).name === "AbortError") {
+                throw err;
+            }
             return retry(err as Error);
         }
 
@@ -170,7 +190,7 @@ export async function getResources(cohortId: string, resourceType: string, optio
     return request<IHL_API_Response>(url, {
         method : "POST",
         headers: { "content-type": "application/json" },
-        body   : JSON.stringify(options.payload || {}),
+        body   : requestBody(options),
         signal : options.signal
     }, options.retryOptions);
 }
@@ -195,7 +215,7 @@ async function getResourcesPage(
     const json = await request<IHL_API_Response>(url, {
         method : "POST",
         headers: { "content-type": "application/json" },
-        body   : JSON.stringify(options.payload || {}),
+        body   : requestBody(options),
         signal : options.signal
     }, options.retryOptions);
     
@@ -208,6 +228,15 @@ export async function getAllResourcePages(
     options: Omit<IHL_API_Query_Options, "offset"> = {},
     onProgress?: (progress: number) => void
 ): Promise<FHIRResource[]> {
+    // The API filters by the resource's patient reference, which a Patient
+    // does not have, so a filtered Patient request comes back empty. Fetched
+    // whole and picked out here instead.
+    if (resourceType === "Patient" && options.patientId) {
+        const { patientId, ...rest } = options;
+        const patients = await getAllResourcePages(cohortId, resourceType, rest, onProgress);
+        return patients.filter(patient => patient.id === patientId);
+    }
+
     const out: FHIRResource[] = [];
 
     let offset = 0, total: number;

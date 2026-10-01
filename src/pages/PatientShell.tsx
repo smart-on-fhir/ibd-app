@@ -5,6 +5,7 @@ import { Spinner }                     from '../components/ui/Spinner'
 import { ErrorMessage }                from '../components/ui/ErrorMessage'
 import { useMediaQuery }               from '../hooks/useMediaQuery'
 import { getPatient as fetchPatient }  from '../api/ihl'
+import { useResetClinicalData }        from '../hooks/usePrefetch'
 import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router'
 import {
   ChartColumnDecreasing, Clock, Search, Sidebar, UserCircle, UserCircleIcon,
@@ -142,6 +143,7 @@ export function PatientShell() {
   const { patient, isLoading, error, getPatient } = useClinicalData();
   const { id }                        = useParams<{ id: string }>()
   const isNarrow                      = useMediaQuery(NARROW_SCREEN)
+  const resetClinicalData             = useResetClinicalData()
   // The stored preference is state rather than a ref: it is read while
   // rendering — deciding what to restore when the breakpoint is crossed — and
   // reading a ref there is exactly what React tells you not to do.
@@ -176,6 +178,15 @@ export function PatientShell() {
     }
   }
 
+  // Moving from one patient straight to another by URL, without the patient
+  // list in between to reset the context, leaves the previous patient's record
+  // in it. Reset here, and render nothing of theirs in the meantime. Declared
+  // before the effect below so that it runs first.
+  const showingOtherPatient = !!(id && patient && patient.id !== id)
+  useEffect(() => {
+    if (showingOtherPatient) resetClinicalData()
+  }, [showingOtherPatient, resetClinicalData])
+
   // Arriving by URL rather than from the patient list — a deep link, a
   // bookmark, a refresh — means nothing has been loaded yet. Selecting a local
   // bundle in PatientList fills the context before navigating, so that path
@@ -189,6 +200,7 @@ export function PatientShell() {
       .catch(e => setLoadFailure({ id, error: e instanceof Error ? e : new Error(String(e)) }))
   }, [id, getPatient])
 
+  if (showingOtherPatient) return <PatientLoader />
   if (isLoading) return <PatientLoader />
   if (error) return <PatientError error={error + ''} />
   if (loadError) return <PatientError error={loadError} />

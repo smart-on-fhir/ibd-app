@@ -1,5 +1,6 @@
 import { useState, useTransition, useEffect, useRef } from 'react'
 import { Calendar, ChevronRight }                     from 'lucide-react'
+import { useParams }                                  from 'react-router'
 import { SidebarLayout }                              from 'clinical-primitives'
 import { usePatientSearch }                           from '../hooks/usePatientSearch'
 import { useDebounce }                                from '../hooks/useDebounce'
@@ -109,8 +110,9 @@ function entryKey(entry: SearchEntry): string {
 }
 
 export function PatientSearch() {
+  const { id } = useParams<{ id: string }>()
   return (
-    <Preload resourceTypes={SEARCH_RESOURCE_TYPES} label="Indexing records…">
+    <Preload patientId={id} resourceTypes={SEARCH_RESOURCE_TYPES} label="Indexing records…">
       <PatientSearchContent />
     </Preload>
   )

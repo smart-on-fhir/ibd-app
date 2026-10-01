@@ -1,6 +1,7 @@
 import { useMemo, useState }     from 'react'
 import type { Attachment }       from 'fhir/r4'
 import { File, FileText }        from 'lucide-react'
+import { useParams }             from 'react-router'
 import { isIBDPanelObservation } from '../modules/ibd/utils'
 import type { FHIRResourceMap }  from '../types/fhir'
 import { Preload }               from '../components/Preload'
@@ -171,8 +172,10 @@ function NoteDetail({ note }: { note: ClinicalNote }) {
 }
 
 export function NotesPage() {
+    const { id } = useParams<{ id: string }>()
     return (
         <Preload
+            patientId={id}
             resourceTypes={[
                 // "Patient",
                 "Observation",

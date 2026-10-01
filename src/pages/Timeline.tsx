@@ -1,5 +1,6 @@
 import type { Observation } from "fhir/r4";
 import { CircleSmall } from "lucide-react";
+import { useParams }   from "react-router";
 import { IBDSummary }  from "./IBDSummary";
 import { Preload }     from "../components/Preload";
 import {
@@ -83,8 +84,10 @@ const classifyIbdMedication: MedicationClassifier = (base, med) => {
 };
 
 export function TimelinePage() {
+  const { id } = useParams<{ id: string }>();
   return (
     <Preload
+      patientId={id}
       resourceTypes={[
         "Patient",
         "Observation",

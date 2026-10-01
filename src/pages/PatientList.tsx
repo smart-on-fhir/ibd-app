@@ -7,6 +7,7 @@ import { ErrorMessage }                             from '../components/ui/Error
 import { EmptyState }                               from '../components/ui/EmptyState'
 import type { Patient }                             from 'fhir/r4'
 import { getAllPatients }                           from '../api/ihl'
+import { useResetClinicalData }                     from '../hooks/usePrefetch'
 
 
 export function PatientList() {
@@ -17,11 +18,12 @@ export function PatientList() {
   // idle moment worth rendering.
   const [status  , setStatus  ] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error   , setError   ] = useState<string | null>(null)
-  const { selectFile, clear } = useClinicalData()
+  const { selectFile }        = useClinicalData()
+  const resetClinicalData     = useResetClinicalData()
 
   useEffect(() => {
     const controller = new AbortController()
-    clear();
+    resetClinicalData();
 
     getAllPatients("sim-ibd-patients", { signal: controller.signal })
       .then(patients => {
@@ -37,7 +39,7 @@ export function PatientList() {
       });
     
     return () => controller.abort()
-  }, [clear]);
+  }, [resetClinicalData]);
 
   return (
     <div className="min-h-screen bg-stone-50">
