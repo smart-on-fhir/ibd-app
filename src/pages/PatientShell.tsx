@@ -103,7 +103,9 @@ function PatientHeader({ patient, onToggleSidebar }: { patient: Patient; onToggl
           </div>
         </div>
         <div className="space-y-0.5 text-xs text-stone-400">
-          { lib.Patient.displayPatientAge(patient) } · <span className="capitalize">{ lib.Person.displayPersonGender(patient) }</span>
+          { lib.Patient.displayPatientAge(patient) } · <span className="capitalize">
+            { lib.Person.displayPersonGender(patient) }
+          </span> · <span>DOB: { patient.birthDate ?  new Date(patient.birthDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A' }</span>
         </div>
       </div>
     </div>
