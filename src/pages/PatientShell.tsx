@@ -1,15 +1,15 @@
-import type { Patient }                from 'fhir/r4'
-import { useEffect, useState }         from 'react'
-import { useClinicalData, lib }        from 'clinical-primitives'
-import { Spinner }                     from '../components/ui/Spinner'
-import { ErrorMessage }                from '../components/ui/ErrorMessage'
-import { useMediaQuery }               from '../hooks/useMediaQuery'
-import { getPatient as fetchPatient }  from '../api/ihl'
-import { useResetClinicalData }        from '../hooks/usePrefetch'
-import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router'
+import type { Patient }                     from 'fhir/r4'
+import { useEffect, useState }              from 'react'
+import { useClinicalData, lib }             from 'clinical-primitives'
+import { Spinner }                          from '../components/ui/Spinner'
+import { ErrorMessage }                     from '../components/ui/ErrorMessage'
+import { useMediaQuery }                    from '../hooks/useMediaQuery'
+import { getPatient as fetchPatient }       from '../api/ihl'
+import { useResetClinicalData }             from '../hooks/usePrefetch'
+import { Link, NavLink, Outlet, useParams } from 'react-router'
 import {
   ChartColumnDecreasing, Clock, Search, Sidebar, UserCircle, UserCircleIcon,
-  Users, FileText
+  Users, FileText, ArrowLeft
 }  from 'lucide-react'
 
 
@@ -105,7 +105,10 @@ function PatientHeader({ patient, onToggleSidebar }: { patient: Patient; onToggl
         <div className="space-y-0.5 text-xs text-stone-400">
           { lib.Patient.displayPatientAge(patient) } · <span className="capitalize">
             { lib.Person.displayPersonGender(patient) }
-          </span> · <span>DOB: { patient.birthDate ?  new Date(patient.birthDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A' }</span>
+          </span> · <span>DOB: { patient.birthDate ?
+            new Date(patient.birthDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) :
+            'N/A'
+          }</span>
         </div>
       </div>
     </div>
@@ -113,15 +116,9 @@ function PatientHeader({ patient, onToggleSidebar }: { patient: Patient; onToggl
 }
 
 function PatientFooter() {
-  const navigate = useNavigate()
   return (
-    <div className="border-t border-stone-200 px-4 py-3">
-      <button
-        onClick={() => navigate('/patients')}
-        className="text-xs text-gray-400 hover:text-blue-600 cursor-pointer"
-      >
-        ← Back to patients
-      </button>
+    <div className="border-t border-stone-200 mt-3 pt-3">
+      <NavItem to='/patients' label="Back to patients" icon={<ArrowLeft className="inline-block h-4 w-4 mr-1" />} />
     </div>
   )
 }
@@ -131,11 +128,12 @@ function PatientNav() {
   const base = `/patients/${id}`
   return (
     <nav className="flex-1 space-y-1 px-2 py-3">
-      <NavItem to={base}               icon={<Clock className="inline-block h-4 w-4 mr-1" />} label="IBD Timeline" />
-      <NavItem to={`${base}/cohort`}   icon={<Users className="inline-block h-4 w-4 mr-1" />} label="Similarity Cohort" />
-      <NavItem to={`${base}/survival`} icon={<ChartColumnDecreasing className="inline-block h-4 w-4 mr-1" />} label="Survival Analysis" />
-      <NavItem to={`${base}/search`}   icon={<Search className="inline-block h-4 w-4 mr-1" />} label="Health Record Search" />
-      <NavItem to={`${base}/notes`}    icon={<FileText className="inline-block h-4 w-4 mr-1" />} label="Clinical Notes" />
+      <NavItem to={base}               label="IBD Timeline"         icon={<Clock className="inline-block h-4 w-4 mr-1" />} />
+      <NavItem to={`${base}/cohort`}   label="Similarity Cohort"    icon={<Users className="inline-block h-4 w-4 mr-1" />} />
+      <NavItem to={`${base}/survival`} label="Survival Analysis"    icon={<ChartColumnDecreasing className="inline-block h-4 w-4 mr-1" />} />
+      <NavItem to={`${base}/search`}   label="Health Record Search" icon={<Search className="inline-block h-4 w-4 mr-1" />} />
+      <NavItem to={`${base}/notes`}    label="Clinical Notes"       icon={<FileText className="inline-block h-4 w-4 mr-1" />} />
+      <PatientFooter />
     </nav>
   )
 }
@@ -241,7 +239,6 @@ export function PatientShell() {
           <SidebarToggle onClick={() => setSidebar(false)} />
         </h1>
         <PatientNav />
-        <PatientFooter />
       </aside>
       <main className={ "flex-1 overflow-auto bg-white p-6" + (isNarrow ? "" : " border m-1 rounded-lg border-stone-200") }>
         <PatientHeader
