@@ -6,6 +6,12 @@ interface ImportMetaEnv {
      * `.env.local`; optional here because nothing guarantees it is.
      */
     readonly VITE_API_BASE_URL?: string
+
+    /**
+     * The genomics API root, cohort included. Set in `.env.local`; optional
+     * here because nothing guarantees it is.
+     */
+    readonly VITE_GENOMICS_API_URL?: string
 }
 
 interface ImportMeta {

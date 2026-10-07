@@ -21,6 +21,7 @@ After picking a patient from the cohort list, the patient view offers:
 | **IBD Timeline**         | An IBD summary (subtype, diagnosis date, Paris classification, and more) above a timeline of IBD medications by drug class and IBD lab panel results. |
 | **Similarity Cohort**    | Modeled outcomes for treatment options in a cohort of similar patients, with confidence intervals.                     |
 | **Survival Analysis**    | Event-free survival curves for the VEO-IBD cohort, stratified by age at diagnosis, first-line therapy, sex, subtype, or severity, with a risk table. |
+| **Genomics**             | Germline variants from a genomics API: candidate variants with their ACMG classification, predictions, and phenotypes, and which parent each came from. |
 | **Health Record Search** | Full-text search across conditions, medications, observations, procedures, allergies, encounters, reports, immunizations, and documents. |
 | **Clinical Notes**       | Clinical notes on a timeline, grouped by note type, with the note text and attachments.                                |
 
@@ -112,6 +113,7 @@ startup, so restart the dev server (or rebuild) after changing them.
 | ------------------- | -------- | ------------------------------------------------------------------------------------------------------------------- |
 | `VITE_API_BASE_URL` | Yes      | Base URL of the IHL FHIR API, with `{cohort_id}` where the cohort ID goes. Example: `https://dashboard-test.smartcumulus.org/test/fhir/{cohort_id}` |
 | `VITE_COHORT_ID`    | No       | Reserved for later use. The app currently always loads the `sim-ibd-patients` cohort.                               |
+| `VITE_GENOMICS_API_URL` | Yes      | Root of the genomics API, cohort included. Example: `https://p70a3lr56f.execute-api.us-east-1.amazonaws.com/sim/cumulus_sim_ibd_db` |
 
 If `VITE_API_BASE_URL` is missing, the app logs a warning in the browser
 console and every data request fails with a message naming the setting.
@@ -127,6 +129,7 @@ console and every data request fails with a message naming the setting.
 | IBD summary panel             | Placeholder data in `src/pages/IBDSummary.tsx`, pending the summary service.                              |
 | Similarity Cohort             | Placeholder numbers in `src/pages/Cohort.tsx`, pending the cohort service.                                |
 | Survival Analysis             | A bundled aggregate export, `src/api/veo_ibd_efs_cube_rounded.csv`. Counts are rounded for disclosure control, so totals do not always add up exactly. |
+| Genomics                      | The genomics API at `VITE_GENOMICS_API_URL`. Not yet linked to patients, so every patient is shown the same synthetic family (sample `SYNTH_P004` and parents). |
 
 ## Scripts
 

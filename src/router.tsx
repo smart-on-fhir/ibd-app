@@ -6,6 +6,7 @@ import { TimelinePage }                          from './pages/Timeline'
 import { NotesPage }                             from './pages/Notes'
 import { CohortPage }                            from './pages/Cohort'
 import { SurvivalPage }                          from './pages/Survival'
+import { GenomicsPage }                          from './pages/Genomics'
 
 
 export const router = createBrowserRouter([
@@ -24,6 +25,7 @@ export const router = createBrowserRouter([
           { path: 'timeline'     , element: <TimelinePage />  },
           { path: 'cohort'       , element: <CohortPage />    },
           { path: 'survival'     , element: <SurvivalPage />  },
+          { path: 'genomics'     , element: <GenomicsPage />  },
         ],
       },
     ],

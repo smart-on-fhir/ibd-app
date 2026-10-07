@@ -9,7 +9,7 @@ import { useResetClinicalData }             from '../hooks/usePrefetch'
 import { Link, NavLink, Outlet, useParams } from 'react-router'
 import {
   ChartColumnDecreasing, Clock, Search, Sidebar, UserCircle, UserCircleIcon,
-  Users, FileText, ArrowLeft
+  Users, FileText, ArrowLeft, Dna
 }  from 'lucide-react'
 
 
@@ -131,6 +131,7 @@ function PatientNav() {
       <NavItem to={base}               label="IBD Timeline"         icon={<Clock className="inline-block h-4 w-4 mr-1" />} />
       <NavItem to={`${base}/cohort`}   label="Similarity Cohort"    icon={<Users className="inline-block h-4 w-4 mr-1" />} />
       <NavItem to={`${base}/survival`} label="Survival Analysis"    icon={<ChartColumnDecreasing className="inline-block h-4 w-4 mr-1" />} />
+      <NavItem to={`${base}/genomics`} label="Genomics"             icon={<Dna className="inline-block h-4 w-4 mr-1" />} />
       <NavItem to={`${base}/search`}   label="Health Record Search" icon={<Search className="inline-block h-4 w-4 mr-1" />} />
       <NavItem to={`${base}/notes`}    label="Clinical Notes"       icon={<FileText className="inline-block h-4 w-4 mr-1" />} />
       <PatientFooter />

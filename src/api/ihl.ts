@@ -264,6 +264,17 @@ export async function getPatient(patientId: string, cohortId: string, options: I
 // =============================================================================
 
 export async function getPatientSummary(patientId: string) {
+    // https://www.smartcumulus.org/synthetic/fhir/sim-ibd-patients/Patient?offset=0
+    // try {
+    //     const response = await fetch(`http://internal-sds-test-test-study-va-lb-1703290890.us-east-1.elb.amazonaws.com:8080/study/ibd/patient/summary?version=007&subject_ref=Patient/${patientId}`);
+    //     if (!response.ok) {
+    //         throw new Error(`Failed to fetch patient summary: ${response.statusText}`);
+    //     }
+    //     return await response.json();
+    // } catch (error) {
+    //     console.error("Failed to fetch patient summary:", error);
+    // }
+    
     await new Promise(resolve => setTimeout(resolve, 5000));
     return {
         subject_ref: `Patient/${patientId}`,
