@@ -16,6 +16,12 @@ interface ImportMetaEnv {
      * Possibly missing for the same reason as VITE_FHIR_API_BASE_URL.
      */
     readonly VITE_GENOMICS_API_BASE_URL?: string
+
+    /**
+     * The study API root, cohort included, which serves patient summaries.
+     * Optional: without it, the IBD summary uses placeholder data.
+     */
+    readonly VITE_STUDY_API_BASE_URL?: string
 }
 
 interface ImportMeta {

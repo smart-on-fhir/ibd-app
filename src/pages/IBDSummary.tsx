@@ -97,6 +97,24 @@ function SummaryRow({
 }
 
 /**
+ * Summaries requested so far, by patient. Shared so that mounting again reuses
+ * the request rather than repeating it: React's StrictMode mounts every
+ * component twice in development, and returning to the timeline remounts this
+ * one. A failed request is dropped, so the next mount tries again.
+ */
+const summaries = new Map<string, ReturnType<typeof getPatientSummary>>();
+
+function loadPatientSummary(patientId: string): ReturnType<typeof getPatientSummary> {
+  let summary = summaries.get(patientId);
+  if (!summary) {
+    summary = getPatientSummary(patientId);
+    summary.catch(() => summaries.delete(patientId));
+    summaries.set(patientId, summary);
+  }
+  return summary;
+}
+
+/**
  * Expects its resources to be already loaded — see the `<Preload>` in
  * TimelinePage, which is the only place this is rendered.
  */
@@ -132,9 +150,12 @@ export function IBDSummary() {
   // Once per mount. Without the dependency list this ran after every render,
   // re-requesting the summary each time its own response arrived.
   useEffect(() => {
-    getPatientSummary(patient!.id!).then(response => {
-      setResponse(response);
+    let cancelled = false;
+    // loadPatientSummary(patient!.id!).then(response => {
+    loadPatientSummary("5ee7fbf3da3037ce4f693e6fbc73ba4c02bb6dd8cd47c07cea050a4d2fd0b080").then(response => {
+      if (!cancelled) setResponse(response);
     });
+    return () => { cancelled = true; };
   }, []);
 
   if (!response) return <Loader centered msg="Loading patient summary..." />;

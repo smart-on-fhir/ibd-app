@@ -113,6 +113,7 @@ startup, so restart the dev server (or rebuild) after changing them.
 | ---------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `VITE_FHIR_API_BASE_URL`     | Yes      | Root of the IHL FHIR API, cohort included. Example: `https://www.smartcumulus.org/synthetic/fhir/cumulus_sim_ibd_v2`              |
 | `VITE_GENOMICS_API_BASE_URL` | Yes      | Root of the genomics API, cohort included. Example: `https://p70a3lr56f.execute-api.us-east-1.amazonaws.com/sim/cumulus_sim_ibd_db` |
+| `VITE_STUDY_API_BASE_URL`    | No       | Root of the study API, cohort included, which serves patient summaries. Example: `https://dashboard-test.smartcumulus.org/test/study/ibd/cohort/cumulus_sim_ibd_v2_db` |
 
 If `VITE_FHIR_API_BASE_URL` is missing, the app fails to start, with an error
 naming the setting in the browser console. If `VITE_GENOMICS_API_BASE_URL` is
@@ -126,7 +127,7 @@ missing, only the Genomics page fails, with the same kind of message.
 | Data                          | Source                                                                                                    |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------- |
 | Patients and FHIR resources   | The IHL FHIR API at `VITE_FHIR_API_BASE_URL` (simulated patients).                                        |
-| IBD summary panel             | Placeholder data in `src/pages/IBDSummary.tsx`, pending the summary service.                              |
+| IBD summary panel             | Placeholder data in `getPatientSummary()` in `src/api/ihl.ts`. With `VITE_STUDY_API_BASE_URL` set, the summary is also requested from the study API and logged to the console, but the panel still shows the placeholder. |
 | Similarity Cohort             | Placeholder numbers in `src/pages/Cohort.tsx`, pending the cohort service.                                |
 | Survival Analysis             | A bundled aggregate export, `src/api/veo_ibd_efs_cube_rounded.csv`. Counts are rounded for disclosure control, so totals do not always add up exactly. |
 | Genomics                      | The genomics API at `VITE_GENOMICS_API_BASE_URL`. Not yet linked to patients, so every patient is shown the same synthetic family (sample `SYNTH_P004` and parents). |

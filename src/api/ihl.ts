@@ -68,10 +68,9 @@ function requestBody(options: IHL_API_Query_Options): string {
 }
 
 
-/**
- * The FHIR API endpoint
- */
-const FHIR_API_BASE_URL = import.meta.env.VITE_FHIR_API_BASE_URL as string;
+// The API base URLs
+const FHIR_API_BASE_URL  = import.meta.env.VITE_FHIR_API_BASE_URL as string;
+const STUDY_API_BASE_URL = import.meta.env.VITE_STUDY_API_BASE_URL as string;
 
 // Warned about up front, so a missing setting shows in the console at load
 // rather than first as a failed request.
@@ -250,18 +249,29 @@ export async function getPatient(patientId: string, options: IHL_API_Query_Optio
 // =============================================================================
 
 export async function getPatientSummary(patientId: string) {
-    // https://www.smartcumulus.org/synthetic/fhir/sim-ibd-patients/Patient?offset=0
-    // try {
-    //     const response = await fetch(`http://internal-sds-test-test-study-va-lb-1703290890.us-east-1.elb.amazonaws.com:8080/study/ibd/patient/summary?version=007&subject_ref=Patient/${patientId}`);
-    //     if (!response.ok) {
-    //         throw new Error(`Failed to fetch patient summary: ${response.statusText}`);
-    //     }
-    //     return await response.json();
-    // } catch (error) {
-    //     console.error("Failed to fetch patient summary:", error);
-    // }
+
+    // The API response and the App's implementation are not compatible yet. We
+    // currently just logs the response for debugging purposes.
+    if (STUDY_API_BASE_URL) {
+        try {
+            const response    = await fetch(`${STUDY_API_BASE_URL}/patient/summary?version=007`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ subject_ref: `Patient/${patientId}` })
+            });
+            if (!response.ok) {
+                throw new Error(`Failed to fetch patient summary: ${response.statusText}`);
+            }
+            const json = await response.json();
+            console.log(json);
+        } catch (error) {
+            console.error("Failed to fetch patient summary:", error);
+        }
+    }
     
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    await new Promise(resolve => setTimeout(resolve, 10));
     return {
         subject_ref: `Patient/${patientId}`,
         fields: {
