@@ -69,25 +69,15 @@ function requestBody(options: IHL_API_Query_Options): string {
 
 
 /**
- * The FHIR API endpoint, with `{cohort_id}` where the cohort goes. Set in
- * `.env.local`, and read once at startup — changing it needs a dev-server
- * restart or a rebuild.
+ * The FHIR API endpoint
  */
 const FHIR_API_BASE_URL = import.meta.env.VITE_FHIR_API_BASE_URL as string;
-const COHORT_ID    = import.meta.env.VITE_COHORT_ID as string;
 
 // Warned about up front, so a missing setting shows in the console at load
 // rather than first as a failed request.
 if (!FHIR_API_BASE_URL) {
     throw new Error(
         "VITE_FHIR_API_BASE_URL is not set, so no data can be loaded from the API. " +
-        "Set it in .env.local and restart the dev server."
-    );
-}
-
-if (!COHORT_ID) {
-    throw new Error(
-        "VITE_COHORT_ID is not set, so no data can be loaded from the API. " +
         "Set it in .env.local and restart the dev server."
     );
 }
@@ -104,12 +94,7 @@ let _availableResourceTypes: Promise<string[]> | null = null;
  * @returns The constructed URL object.
  */
 function buildUrl(path: string, queryParams?: Record<string, string | number | boolean | undefined>): URL {
-    const url = new URL(
-        FHIR_API_BASE_URL
-        .replace("{cohort_id}", COHORT_ID)
-        .replace(/\/$/, "")
-        + '/' + path.replace(/^\/+/, "")
-    );
+    const url = new URL(FHIR_API_BASE_URL.replace(/\/$/, "") + '/' + path.replace(/^\/+/, ""));
 
     if (queryParams) {
         for (const [key, value] of Object.entries(queryParams)) {

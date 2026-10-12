@@ -2,14 +2,18 @@
 
 interface ImportMetaEnv {
     /**
-     * The FHIR API endpoint, with `{cohort_id}` where the cohort goes. Set in
-     * `.env.local`; optional here because nothing guarantees it is.
+     * The FHIR API root, cohort included. Set in `.env.local`.
+     *
+     * Typed as possibly missing (`?`) because it is whenever `.env.local` is
+     * absent or lacks the line, and the type should make code check for that
+     * rather than assume a string.
      */
     readonly VITE_FHIR_API_BASE_URL?: string
 
     /**
-     * The genomics API root, cohort included. Set in `.env.local`; optional
-     * here because nothing guarantees it is.
+     * The genomics API root, cohort included. Set in `.env.local`.
+     *
+     * Possibly missing for the same reason as VITE_FHIR_API_BASE_URL.
      */
     readonly VITE_GENOMICS_API_BASE_URL?: string
 }
