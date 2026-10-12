@@ -253,25 +253,24 @@ export async function getPatientSummary(patientId: string) {
     // The API response and the App's implementation are not compatible yet. We
     // currently just logs the response for debugging purposes.
     if (STUDY_API_BASE_URL) {
-        try {
-            const response    = await fetch(`${STUDY_API_BASE_URL}/patient/summary?version=007`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ subject_ref: `Patient/${patientId}` })
-            });
+        fetch(`${STUDY_API_BASE_URL}/patient/summary?version=007`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ subject_ref: `Patient/${patientId}` })
+        }).then(response => {
             if (!response.ok) {
                 throw new Error(`Failed to fetch patient summary: ${response.statusText}`);
             }
-            const json = await response.json();
+            return response.json();
+        }).then(json => {
             console.log(json);
-        } catch (error) {
+        }).catch(error => {
             console.error("Failed to fetch patient summary:", error);
-        }
+        });
     }
     
-    await new Promise(resolve => setTimeout(resolve, 10));
     return {
         subject_ref: `Patient/${patientId}`,
         fields: {

@@ -121,7 +121,6 @@ function loadPatientSummary(patientId: string): ReturnType<typeof getPatientSumm
 export function IBDSummary() {
   const [open, setOpen] = useState(false);
   const [selectedResource, setSelectedResource] = useState<object | null>(null);
-  // @ts-ignore
   const { resources, patient } = useClinicalData();
   const [response, setResponse] = useState<SummaryResponse | null>(null);
 
@@ -152,8 +151,7 @@ export function IBDSummary() {
   // re-requesting the summary each time its own response arrived.
   useEffect(() => {
     let cancelled = false;
-    // loadPatientSummary(patient!.id!).then(response => {
-    loadPatientSummary("5ee7fbf3da3037ce4f693e6fbc73ba4c02bb6dd8cd47c07cea050a4d2fd0b080").then(response => {
+    loadPatientSummary(patient!.id!).then(response => {
       if (!cancelled) setResponse(response);
     });
     return () => { cancelled = true; };
