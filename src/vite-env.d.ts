@@ -11,7 +11,7 @@ interface ImportMetaEnv {
      * The genomics API root, cohort included. Set in `.env.local`; optional
      * here because nothing guarantees it is.
      */
-    readonly VITE_GENOMICS_API_URL?: string
+    readonly VITE_GENOMICS_API_BASE_URL?: string
 }
 
 interface ImportMeta {

@@ -9,7 +9,7 @@
  * The API root, cohort included. Set in `.env.local`, and read once at
  * startup — changing it needs a dev-server restart or a rebuild.
  */
-const GENOMICS_API_URL = import.meta.env.VITE_GENOMICS_API_URL;
+const GENOMICS_API_BASE_URL = import.meta.env.VITE_GENOMICS_API_BASE_URL;
 
 /** How often a running query is checked on. */
 const POLL_INTERVAL = 1500;
@@ -65,11 +65,11 @@ export interface SampleRecord {
 function buildUrl(path: string, params?: Record<string, string | number>): URL {
     // Thrown rather than left to `new URL()`, whose "Invalid URL" would not
     // say which setting is missing.
-    if (!GENOMICS_API_URL) {
-        throw new Error("Cannot reach the genomics API: VITE_GENOMICS_API_URL is not set in .env.local.");
+    if (!GENOMICS_API_BASE_URL) {
+        throw new Error("Cannot reach the genomics API: VITE_GENOMICS_API_BASE_URL is not set in .env.local.");
     }
 
-    const url = new URL(GENOMICS_API_URL.replace(/\/$/, "") + "/" + path.replace(/^\/+/, ""));
+    const url = new URL(GENOMICS_API_BASE_URL.replace(/\/$/, "") + "/" + path.replace(/^\/+/, ""));
     for (const [key, value] of Object.entries(params ?? {})) {
         url.searchParams.set(key, String(value));
     }

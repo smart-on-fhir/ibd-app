@@ -109,11 +109,11 @@ again; re-run `npm link ../clinical-primitives` afterwards.
 Settings are read from `.env.local`, which is git-ignored. Vite reads them at
 startup, so restart the dev server (or rebuild) after changing them.
 
-| Variable            | Required | Description                                                                                                         |
-| ------------------- | -------- | ------------------------------------------------------------------------------------------------------------------- |
-| `VITE_API_BASE_URL` | Yes      | Base URL of the IHL FHIR API, with `{cohort_id}` where the cohort ID goes. Example: `https://dashboard-test.smartcumulus.org/test/fhir/{cohort_id}` |
-| `VITE_COHORT_ID`    | No       | Reserved for later use. The app currently always loads the `sim-ibd-patients` cohort.                               |
-| `VITE_GENOMICS_API_URL` | Yes      | Root of the genomics API, cohort included. Example: `https://p70a3lr56f.execute-api.us-east-1.amazonaws.com/sim/cumulus_sim_ibd_db` |
+| Variable                | Required | Description                                                                                                         |
+| ----------------------- | -------- | ------------------------------------------------------------------------------------------------------------------- |
+| `VITE_API_BASE_URL`     | Yes      | Base URL of the IHL FHIR API, with `{cohort_id}` where the cohort ID goes. Example: `https://dashboard-test.smartcumulus.org/test/fhir/{cohort_id}` |
+| `VITE_COHORT_ID`        | Yes      | The cohort id is used in different URLs within the app.                               |
+| `VITE_GENOMICS_API_BASE_URL` | Yes      | Root of the genomics API, cohort included. Example: `https://p70a3lr56f.execute-api.us-east-1.amazonaws.com/sim/cumulus_sim_ibd_db` |
 
 If `VITE_API_BASE_URL` is missing, the app logs a warning in the browser
 console and every data request fails with a message naming the setting.
@@ -129,7 +129,7 @@ console and every data request fails with a message naming the setting.
 | IBD summary panel             | Placeholder data in `src/pages/IBDSummary.tsx`, pending the summary service.                              |
 | Similarity Cohort             | Placeholder numbers in `src/pages/Cohort.tsx`, pending the cohort service.                                |
 | Survival Analysis             | A bundled aggregate export, `src/api/veo_ibd_efs_cube_rounded.csv`. Counts are rounded for disclosure control, so totals do not always add up exactly. |
-| Genomics                      | The genomics API at `VITE_GENOMICS_API_URL`. Not yet linked to patients, so every patient is shown the same synthetic family (sample `SYNTH_P004` and parents). |
+| Genomics                      | The genomics API at `VITE_GENOMICS_API_BASE_URL`. Not yet linked to patients, so every patient is shown the same synthetic family (sample `SYNTH_P004` and parents). |
 
 ## Scripts
 
