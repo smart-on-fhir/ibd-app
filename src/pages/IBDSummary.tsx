@@ -121,6 +121,7 @@ function loadPatientSummary(patientId: string): ReturnType<typeof getPatientSumm
 export function IBDSummary() {
   const [open, setOpen] = useState(false);
   const [selectedResource, setSelectedResource] = useState<object | null>(null);
+  // @ts-ignore
   const { resources, patient } = useClinicalData();
   const [response, setResponse] = useState<SummaryResponse | null>(null);
 
