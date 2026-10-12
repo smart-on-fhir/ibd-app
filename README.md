@@ -111,11 +111,11 @@ startup, so restart the dev server (or rebuild) after changing them.
 
 | Variable                | Required | Description                                                                                                         |
 | ----------------------- | -------- | ------------------------------------------------------------------------------------------------------------------- |
-| `VITE_API_BASE_URL`     | Yes      | Base URL of the IHL FHIR API, with `{cohort_id}` where the cohort ID goes. Example: `https://dashboard-test.smartcumulus.org/test/fhir/{cohort_id}` |
+| `VITE_FHIR_API_BASE_URL`     | Yes      | Base URL of the IHL FHIR API, with `{cohort_id}` where the cohort ID goes. Example: `https://dashboard-test.smartcumulus.org/test/fhir/{cohort_id}` |
 | `VITE_COHORT_ID`        | Yes      | The cohort id is used in different URLs within the app.                               |
 | `VITE_GENOMICS_API_BASE_URL` | Yes      | Root of the genomics API, cohort included. Example: `https://p70a3lr56f.execute-api.us-east-1.amazonaws.com/sim/cumulus_sim_ibd_db` |
 
-If `VITE_API_BASE_URL` is missing, the app logs a warning in the browser
+If `VITE_FHIR_API_BASE_URL` is missing, the app logs a warning in the browser
 console and every data request fails with a message naming the setting.
 
 > Anything prefixed with `VITE_` is embedded in the built JavaScript and is
@@ -125,7 +125,7 @@ console and every data request fails with a message naming the setting.
 
 | Data                          | Source                                                                                                    |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Patients and FHIR resources   | The IHL FHIR API at `VITE_API_BASE_URL`, cohort `sim-ibd-patients` (simulated patients).                  |
+| Patients and FHIR resources   | The IHL FHIR API at `VITE_FHIR_API_BASE_URL`, cohort `sim-ibd-patients` (simulated patients).                  |
 | IBD summary panel             | Placeholder data in `src/pages/IBDSummary.tsx`, pending the summary service.                              |
 | Similarity Cohort             | Placeholder numbers in `src/pages/Cohort.tsx`, pending the cohort service.                                |
 | Survival Analysis             | A bundled aggregate export, `src/api/veo_ibd_efs_cube_rounded.csv`. Counts are rounded for disclosure control, so totals do not always add up exactly. |
@@ -148,7 +148,7 @@ with [serve](https://github.com/vercel/serve) on the port in `$PORT`.
 
 Two things to keep in mind on any host:
 
-- **`VITE_API_BASE_URL` is baked in at build time.** Set it in the build
+- **`VITE_FHIR_API_BASE_URL` is baked in at build time.** Set it in the build
   environment, and rebuild after changing it.
 - **Unknown paths must return `index.html`.** The app uses client-side routing
   (`/patients/:id/notes` and similar), so reloading a deep link would otherwise
@@ -175,7 +175,7 @@ src/
 - **Errors from inside a linked `clinical-primitives`, or its styles are
   missing**: the local checkout has not been built. Run `npm run build:lib` in
   the `clinical-primitives` folder.
-- **"VITE_API_BASE_URL is not set"**: create `.env.local` from `.env.example`
+- **"VITE_FHIR_API_BASE_URL is not set"**: create `.env.local` from `.env.example`
   and restart the dev server.
 
 ## License
