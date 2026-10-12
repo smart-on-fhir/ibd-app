@@ -26,6 +26,19 @@ const DEMO_TRIO: Trio = { child: 'SYNTH_P004', father: 'SYNTH_F004', mother: 'SY
 
 type Filter = 'all' | 'pathogenic' | 'bothParents' | 'notInParents'
 
+/**
+ * The filters in the order they are offered. The first one with any variants
+ * is selected to begin with: most children have no pathogenic or likely
+ * pathogenic variant at all (7 of the 10 in the synthetic cohort), and opening
+ * on an empty table would bury the candidates there are.
+ */
+const FILTERS: { filter: Filter, label: string }[] = [
+    { filter: 'pathogenic'  , label: 'Pathogenic or likely pathogenic' },
+    { filter: 'all'         , label: 'All candidates'                  },
+    { filter: 'bothParents' , label: 'Hits from both parents'          },
+    { filter: 'notInParents', label: 'Not in parents'                  },
+]
+
 const CLASSIFICATION_STYLE: Record<string, string> = {
     Pathogenic       : 'bg-red-100 text-red-800 ring-red-300',
     Likely_pathogenic: 'bg-orange-100 text-orange-800 ring-orange-300',
@@ -332,7 +345,6 @@ function FilterButton({ active, onClick, label, count }: { active: boolean, onCl
 }
 
 function Report({ report }: { report: TrioReport }) {
-    const [filter, setFilter] = useState<Filter>('all')
     const { candidates } = report
     const totalVariants  = useVariantCount(report.trio.child)
     const bothParentGenes = genesWithHitsFromBothParents(candidates)
@@ -343,6 +355,12 @@ function Report({ report }: { report: TrioReport }) {
         bothParents : candidates.filter(v => bothParentGenes.has(v.gene)),
         notInParents: candidates.filter(v => v.inheritance === 'neither'),
     }
+
+    // Decided once: the report is complete by the time this mounts, and a
+    // selection the reader makes afterwards is theirs to keep.
+    const [filter, setFilter] = useState<Filter>(
+        () => (FILTERS.find(({ filter }) => subsets[filter].length) ?? FILTERS[0]).filter
+    )
 
     const received = new Date(report.sample.receivedtime + 'T00:00:00').toLocaleDateString(undefined, { dateStyle: 'medium' })
 
@@ -365,10 +383,9 @@ function Report({ report }: { report: TrioReport }) {
             </p>
 
             <div className="mb-4 flex flex-wrap gap-2">
-                <FilterButton active={filter === 'all'}          onClick={() => setFilter('all')}          label="All candidates"                 count={subsets.all.length} />
-                <FilterButton active={filter === 'pathogenic'}   onClick={() => setFilter('pathogenic')}   label="Pathogenic or likely pathogenic" count={subsets.pathogenic.length} />
-                <FilterButton active={filter === 'bothParents'}  onClick={() => setFilter('bothParents')}  label="Hits from both parents"          count={subsets.bothParents.length} />
-                <FilterButton active={filter === 'notInParents'} onClick={() => setFilter('notInParents')} label="Not in parents"                  count={subsets.notInParents.length} />
+                { FILTERS.map(({ filter: f, label }) => (
+                    <FilterButton key={f} active={filter === f} onClick={() => setFilter(f)} label={label} count={subsets[f].length} />
+                )) }
             </div>
 
             <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white px-4 py-2">
