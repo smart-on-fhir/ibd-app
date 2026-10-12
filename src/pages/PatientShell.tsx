@@ -197,7 +197,7 @@ export function PatientShell() {
   useEffect(() => {
     if (!id) return
 
-    getPatient(id, () => fetchPatient(id, 'sim-ibd-patients'))
+    getPatient(id, () => fetchPatient(id))
       .catch(e => setLoadFailure({ id, error: e instanceof Error ? e : new Error(String(e)) }))
   }, [id, getPatient])
 

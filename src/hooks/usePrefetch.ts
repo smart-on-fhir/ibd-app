@@ -46,7 +46,6 @@ export function useResetClinicalData() {
  * useResetClinicalData() when the patient changes.
  */
 export function usePrefetch(
-    cohortId: string,
     resourceTypes: string[],
     options: Pick<IHL_API_Query_Options, "limit" | "signal" | "patientId"> & { force?: boolean } = {}
 ) {
@@ -62,7 +61,7 @@ export function usePrefetch(
     // render, so the request is identified by its contents rather than its
     // identity.
     const key     = resourceTypes.join(",");
-    const request = `${cohortId}|${options.patientId ?? ""}|${key}|${!!options.force}`;
+    const request = `${options.patientId ?? ""}|${key}|${!!options.force}`;
 
     // Types already cached count as done from the start, since lazy() won't
     // fetch them; a forced reload counts nothing as done.
@@ -129,7 +128,6 @@ export function usePrefetch(
                 return lazy(
                     resourceType,
                     () => getAllResourcePages(
-                        cohortId,
                         resourceType,
                         { limit: options.limit ?? 1000, signal, patientId: options.patientId },
                         fraction => {

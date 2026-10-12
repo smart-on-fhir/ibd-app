@@ -25,7 +25,7 @@ export function PatientList() {
     const controller = new AbortController()
     resetClinicalData();
 
-    getAllPatients("sim-ibd-patients", { signal: controller.signal })
+    getAllPatients({ signal: controller.signal })
       .then(patients => {
         setPatients(patients)
         setTotal(patients.length)

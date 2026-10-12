@@ -73,13 +73,21 @@ function requestBody(options: IHL_API_Query_Options): string {
  * `.env.local`, and read once at startup — changing it needs a dev-server
  * restart or a rebuild.
  */
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
+const COHORT_ID    = import.meta.env.VITE_COHORT_ID as string;
 
 // Warned about up front, so a missing setting shows in the console at load
 // rather than first as a failed request.
 if (!API_BASE_URL) {
-    console.warn(
+    throw new Error(
         "VITE_API_BASE_URL is not set, so no data can be loaded from the API. " +
+        "Set it in .env.local and restart the dev server."
+    );
+}
+
+if (!COHORT_ID) {
+    throw new Error(
+        "VITE_COHORT_ID is not set, so no data can be loaded from the API. " +
         "Set it in .env.local and restart the dev server."
     );
 }
@@ -90,22 +98,15 @@ if (!API_BASE_URL) {
 let _availableResourceTypes: Promise<string[]> | null = null;
 
 /**
- * Build a URL for accessing a specific resource within a cohort.
- * @param cohortId The ID of the cohort.
+ * Build a URL for accessing a specific resource within the configured cohort.
  * @param path The path to the resource.
  * @param queryParams Optional query parameters to include in the URL.
  * @returns The constructed URL object.
  */
-function buildUrl(cohortId: string, path: string, queryParams?: Record<string, string | number | boolean | undefined>): URL {
-    // Thrown rather than left to `new URL()`, whose "Invalid URL" would not
-    // say which setting is missing.
-    if (!API_BASE_URL) {
-        throw new Error("Cannot reach the API: VITE_API_BASE_URL is not set in .env.local.");
-    }
-
+function buildUrl(path: string, queryParams?: Record<string, string | number | boolean | undefined>): URL {
     const url = new URL(
         API_BASE_URL
-        .replace("{cohort_id}", cohortId)
+        .replace("{cohort_id}", COHORT_ID)
         .replace(/\/$/, "")
         + '/' + path.replace(/^\/+/, "")
     );
@@ -168,14 +169,13 @@ async function request<T = unknown>(input: RequestInfo | URL, init?: RequestInit
 // =============================================================================
 
 /**
- * Load the available resource types for a given cohort.
- * @param cohortId The ID of the cohort.
+ * Load the available resource types for the configured cohort.
  * @param retryOptions Optional retry options and abort signal.
  * @returns A promise that resolves to an array of available resource types.
  */
-export async function loadAvailableResourceTypes(cohortId: string, { retryOptions, signal }: { retryOptions?: OperationOptions, signal?: AbortSignal } = {}): Promise<string[]> {
+export async function loadAvailableResourceTypes({ retryOptions, signal }: { retryOptions?: OperationOptions, signal?: AbortSignal } = {}): Promise<string[]> {
     if (!_availableResourceTypes) {
-        const url = buildUrl(cohortId, "resources");
+        const url = buildUrl("resources");
         _availableResourceTypes = request<string[]>(url, { signal }, retryOptions);
     }
     return _availableResourceTypes;
@@ -184,13 +184,12 @@ export async function loadAvailableResourceTypes(cohortId: string, { retryOption
 /**
  * Get all resources of a specific type for a given cohort. Note that the result
  * is paginated and we are only getting one page here.
- * @param cohortId
  * @param resourceType 
  * @param options 
  * @returns 
  */
-export async function getResources(cohortId: string, resourceType: string, options: IHL_API_Query_Options = {}): Promise<IHL_API_Response> {
-    const url = buildUrl(cohortId, resourceType, { offset: options.offset, limit: options.limit });
+export async function getResources(resourceType: string, options: IHL_API_Query_Options = {}): Promise<IHL_API_Response> {
+    const url = buildUrl(resourceType, { offset: options.offset, limit: options.limit });
     return request<IHL_API_Response>(url, {
         method : "POST",
         headers: { "content-type": "application/json" },
@@ -200,17 +199,15 @@ export async function getResources(cohortId: string, resourceType: string, optio
 }
 
 /**
- * Get all patients for a given cohort. Uses pagination to retrieve all pages.
- * @param cohortId The ID of the cohort to retrieve patients for.
+ * Get all patients for the configured cohort. Uses pagination to retrieve all pages.
  * @param options Query options for the API request.
  */
-export async function getAllPatients(cohortId: string, options: IHL_API_Query_Options = {}): Promise<Patient[]> {
-    const patients = await getAllResourcePages(cohortId, "Patient", options);
+export async function getAllPatients(options: IHL_API_Query_Options = {}): Promise<Patient[]> {
+    const patients = await getAllResourcePages("Patient", options);
     return patients as Patient[];
 }
 
 export async function getAllResourcePages(
-    cohortId: string,
     resourceType: string,
     options: Omit<IHL_API_Query_Options, "offset"> = {},
     onProgress?: (progress: number) => void
@@ -220,8 +217,9 @@ export async function getAllResourcePages(
     // whole and picked out here instead.
     if (resourceType === "Patient" && options.patientId) {
         const { patientId, ...rest } = options;
-        const patients = await getAllResourcePages(cohortId, resourceType, rest, onProgress);
-        return patients.filter(patient => patient.id === patientId);
+        // const patients = await getAllResourcePages(resourceType, rest, onProgress);
+        // return patients.filter(patient => patient.id === patientId);
+        return [await getPatient(patientId, rest)];
     }
 
     const out: FHIRResource[] = [];
@@ -229,7 +227,7 @@ export async function getAllResourcePages(
     let offset = 0, total: number;
 
     do {
-        const json = await getResources(cohortId, resourceType, { ...options, offset });
+        const json = await getResources(resourceType, { ...options, offset });
         out.push(...json.fhir);
         total  = json.pagination.total;
         offset = json.pagination.offset + json.pagination.limit;
@@ -250,9 +248,12 @@ export async function getAllResourcePages(
  * @param cohortId The cohort ID to query within.
  * @param options Query options for the API request.
  */
-export async function getPatient(patientId: string, cohortId: string, options: IHL_API_Query_Options = {}): Promise<Patient> {
-    const patients = await getAllResourcePages(cohortId, "Patient", options);
-    const patient  = patients.find(r => r.id === patientId);
+export async function getPatient(patientId: string, options: IHL_API_Query_Options = {}): Promise<Patient> {
+
+    const res = await getResources("Patient", { ...options, patientId });
+    const patient  = res.fhir[0]
+    // const patients = await getAllResourcePages("Patient", options });
+    // const patient  = patients.find(r => r.id === patientId);
     if (!patient) {
         throw new Error(`Cannot find a patient with id ${patientId}`);
     }

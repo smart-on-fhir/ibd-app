@@ -16,7 +16,6 @@ import { ErrorMessage }   from "./ui/ErrorMessage";
  */
 export function Preload({
   resourceTypes,
-  cohortId = "sim-ibd-patients",
   patientId,
   label,
   limit,
@@ -24,14 +23,13 @@ export function Preload({
   children,
 }: {
   resourceTypes: string[]
-  cohortId?    : string
   patientId?   : string
   label?       : string
   limit?       : number
   force?       : boolean
   children     : ReactNode
 }) {
-  const { loading, error, progress } = usePrefetch(cohortId, resourceTypes, { limit, force, patientId });
+  const { loading, error, progress } = usePrefetch(resourceTypes, { limit, force, patientId });
 
   if (error)   return <div className="p-6"><ErrorMessage message={error.message} /></div>;
   if (loading) return <ProgressBar value={progress} label={label} />;
