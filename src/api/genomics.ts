@@ -132,15 +132,21 @@ export async function countVariants(query: GenomicsQuery): Promise<number> {
     return row?.count ?? 0;
 }
 
-/** A sample's metadata. */
-export async function getSample(sampleId: string): Promise<SampleRecord> {
-    const res = await fetch(buildUrl(`vcf/sample/${encodeURIComponent(sampleId)}`));
-    if (!res.ok) {
-        throw await failure(res, `loading sample ${sampleId}`);
-    }
-    const [sample] = await res.json() as SampleRecord[];
-    if (!sample) {
-        throw new Error(`Genomics API: no sample with id ${sampleId}.`);
-    }
-    return sample;
+/**
+ * The samples filed under any of the given patient references. A family's
+ * samples share one: the patient's FHIR id for their own sample, and the same
+ * with `-F` or `-M` appended for their father's and mother's.
+ */
+export function findSamples(patientRefs: string[]): Promise<SampleRecord[]> {
+    return runQuery<SampleRecord>("query/sample", { patient_refs: patientRefs }, 100);
+}
+
+/** A sample's id, like `SYNTH_P001`, from the lab identifier in its record. */
+export function sampleIdOf(sample: SampleRecord): string | undefined {
+    return sample.identifier.match(/specimens, value=([^,}\]]+)/)?.[1];
+}
+
+/** The patient reference a sample is filed under. */
+export function patientRefOf(sample: SampleRecord): string | undefined {
+    return sample.subject.match(/reference=([^,}]+)/)?.[1];
 }

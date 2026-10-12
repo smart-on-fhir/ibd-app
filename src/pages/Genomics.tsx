@@ -1,28 +1,19 @@
 /**
- * Germline variants for a child with IBD, read alongside both parents' samples
- * to show where each variant came from.
- *
- * Static for now: genomic samples are not linked to patients yet, so every
- * patient is shown the same synthetic family. Once they are, DEMO_TRIO gives
- * way to a lookup by the selected patient.
+ * Germline variants for the selected patient, read alongside their parents'
+ * samples to show where each variant came from.
  */
 
 import { Fragment, useEffect, useState } from 'react'
-import { ChevronDown, ChevronRight, Info } from 'lucide-react'
+import { useParams }    from 'react-router'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import { Spinner }      from '../components/ui/Spinner'
 import { ErrorMessage } from '../components/ui/ErrorMessage'
 import { EmptyState }   from '../components/ui/EmptyState'
 import {
-    genesWithHitsFromBothParents, loadTrioReport, loadVariantCount,
-    type CandidateVariant, type Inheritance, type Trio, type TrioReport
+    genesWithHitsFromBothParents, loadPatientReport, loadVariantCount,
+    type CandidateVariant, type Inheritance, type TrioReport
 } from '../lib/trioReport'
 
-
-/**
- * The family shown for every patient. Family 004 because its patient
- * reference is the one the mock IBD summary uses, so the two agree.
- */
-const DEMO_TRIO: Trio = { child: 'SYNTH_P004', father: 'SYNTH_F004', mother: 'SYNTH_M004' }
 
 type Filter = 'all' | 'pathogenic' | 'bothParents' | 'notInParents'
 
@@ -52,6 +43,7 @@ const INHERITANCE_LABEL: Record<Inheritance, string> = {
     mother : 'Mother',
     both   : 'Both parents',
     neither: 'Not in parents',
+    unknown: '–',
 }
 
 // =============================================================================
@@ -85,18 +77,19 @@ function formatScore(score: number | undefined, digits = 2): string {
 type ReportState =
     | { status: 'loading' }
     | { status: 'ready', report: TrioReport }
+    | { status: 'none' }
     | { status: 'error', error: Error }
 
-function useTrioReport(trio: Trio): ReportState {
+function usePatientReport(patientId: string): ReportState {
     const [state, setState] = useState<ReportState>({ status: 'loading' })
 
     useEffect(() => {
         let cancelled = false
-        loadTrioReport(trio)
-            .then(report => { if (!cancelled) setState({ status: 'ready', report }) })
+        loadPatientReport(patientId)
+            .then(report => { if (!cancelled) setState(report ? { status: 'ready', report } : { status: 'none' }) })
             .catch(e => { if (!cancelled) setState({ status: 'error', error: e instanceof Error ? e : new Error(String(e)) }) })
         return () => { cancelled = true }
-    }, [trio])
+    }, [patientId])
 
     return state
 }
@@ -135,19 +128,6 @@ function useElapsedSeconds(running: boolean): number {
 // Components
 // =============================================================================
 
-function DemoNotice() {
-    return (
-        <div className="mb-5 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            <Info className="mt-0.5 h-4 w-4 shrink-0" />
-            <p>
-                <b>Demo data.</b> Genomic samples are not linked to patients yet, so this
-                page shows the same synthetic family for every patient: sample{' '}
-                <code>{DEMO_TRIO.child}</code> and both parents.
-            </p>
-        </div>
-    )
-}
-
 function Loading() {
     const seconds = useElapsedSeconds(true)
     return (
@@ -181,6 +161,16 @@ function InheritanceLabel({ value }: { value: Inheritance }) {
                 data-tooltip="Found in the child but in neither parent: a possible new (de novo) variant"
             >
                 {INHERITANCE_LABEL.neither}
+            </span>
+        )
+    }
+    if (value === 'unknown') {
+        return (
+            <span
+                className="text-stone-400"
+                data-tooltip="A parent's sample is missing, so where this variant came from cannot be told"
+            >
+                {INHERITANCE_LABEL.unknown}
             </span>
         )
     }
@@ -344,6 +334,13 @@ function FilterButton({ active, onClick, label, count }: { active: boolean, onCl
     )
 }
 
+function describeParents(father?: string, mother?: string): string {
+    if (father && mother) return `parents ${father} and ${mother}`
+    if (father) return `father ${father}; no sample from the mother`
+    if (mother) return `mother ${mother}; no sample from the father`
+    return 'no samples from the parents'
+}
+
 function Report({ report }: { report: TrioReport }) {
     const { candidates } = report
     const totalVariants  = useVariantCount(report.trio.child)
@@ -370,7 +367,7 @@ function Report({ report }: { report: TrioReport }) {
                 <h2 className="text-lg font-semibold text-stone-900">Germline variants</h2>
                 <p className="text-xs text-stone-400">
                     Sample {report.trio.child} · {report.genomeBuild ?? 'unknown build'} · received {received}
-                    {' '}· parents {report.trio.father} and {report.trio.mother}
+                    {' '}· {describeParents(report.trio.father, report.trio.mother)}
                 </p>
             </div>
 
@@ -395,10 +392,12 @@ function Report({ report }: { report: TrioReport }) {
     )
 }
 
-function TrioReportView({ trio, onRetry }: { trio: Trio, onRetry: () => void }) {
-    const state = useTrioReport(trio)
+function PatientReport({ patientId, onRetry }: { patientId: string, onRetry: () => void }) {
+    const state = usePatientReport(patientId)
 
     if (state.status === 'loading') return <Loading />
+
+    if (state.status === 'none') return <EmptyState message="No genomic data for this patient." />
 
     if (state.status === 'error') {
         return (
@@ -419,15 +418,20 @@ function TrioReportView({ trio, onRetry }: { trio: Trio, onRetry: () => void }) 
 }
 
 export function GenomicsPage() {
+    const { id } = useParams<{ id: string }>()
+
     // Bumped to retry: remounting the report starts it over with fresh state,
     // and a failed report is not kept, so it is queried again.
     const [attempt, setAttempt] = useState(0)
 
+    if (!id) return null
+
     return (
         <div className="pt-6">
             <div className="mx-auto max-w-5xl">
-                <DemoNotice />
-                <TrioReportView key={attempt} trio={DEMO_TRIO} onRetry={() => setAttempt(n => n + 1)} />
+                {/* Keyed by patient too, so moving to another patient starts
+                    from a fresh loading state rather than the last one's report. */}
+                <PatientReport key={`${id}:${attempt}`} patientId={id} onRetry={() => setAttempt(n => n + 1)} />
             </div>
         </div>
     )

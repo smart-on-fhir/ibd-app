@@ -130,7 +130,7 @@ missing, only the Genomics page fails, with the same kind of message.
 | IBD summary panel             | Placeholder data in `getPatientSummary()` in `src/api/ihl.ts`. With `VITE_STUDY_API_BASE_URL` set, the summary is also requested from the study API and logged to the console, but the panel still shows the placeholder. |
 | Similarity Cohort             | Placeholder numbers in `src/pages/Cohort.tsx`, pending the cohort service.                                |
 | Survival Analysis             | A bundled aggregate export, `src/api/veo_ibd_efs_cube_rounded.csv`. Counts are rounded for disclosure control, so totals do not always add up exactly. |
-| Genomics                      | The genomics API at `VITE_GENOMICS_API_BASE_URL`. Not yet linked to patients, so every patient is shown the same synthetic family (sample `SYNTH_P004` and parents). |
+| Genomics                      | The genomics API at `VITE_GENOMICS_API_BASE_URL`. Samples are found by the patient's FHIR id, and their parents' by the same id with `-F` or `-M` appended. |
 
 ## Scripts
 

@@ -1,18 +1,22 @@
 import {
-    countVariants, getSample, runQuery,
+    countVariants, findSamples, patientRefOf, runQuery, sampleIdOf,
     type AnnotationRow, type GenomicsQuery, type SampleRecord, type VariantRow
 } from '../api/genomics'
 
 
-/** A child's sample, and their parents'. */
+/** A child's sample, and their parents' where the lab has them. */
 export interface Trio {
-    child : string
-    father: string
-    mother: string
+    child  : string
+    father?: string
+    mother?: string
 }
 
-/** Which parents carry the child's variant. */
-export type Inheritance = 'father' | 'mother' | 'both' | 'neither'
+/**
+ * Which parents carry the child's variant. `unknown` when a parent's sample is
+ * missing: a variant not found in the one parent there is could still have
+ * come from the other, so it cannot be called either way.
+ */
+export type Inheritance = 'father' | 'mother' | 'both' | 'neither' | 'unknown'
 
 export interface AcmgCriterion {
     /** Like `PM2_Supporting`: P for pathogenic evidence, B for benign. */
@@ -112,7 +116,8 @@ function genomeBuildOf(sample: SampleRecord): string | undefined {
     return sample.note.match(/build (\S+)/)?.[1]
 }
 
-function inheritanceOf(vrsId: string, fromFather: Set<string>, fromMother: Set<string>): Inheritance {
+function inheritanceOf(vrsId: string, fromFather: Set<string> | null, fromMother: Set<string> | null): Inheritance {
+    if (!fromFather || !fromMother) return 'unknown'
     const father = fromFather.has(vrsId)
     const mother = fromMother.has(vrsId)
     return father && mother ? 'both' : father ? 'father' : mother ? 'mother' : 'neither'
@@ -134,11 +139,10 @@ function byClassificationThenGene(a: CandidateVariant, b: CandidateVariant): num
  * parent. Every query is a job taking from a few seconds to about half a
  * minute, and they slow each other down, so the report takes about a minute.
  */
-async function buildTrioReport(trio: Trio): Promise<TrioReport> {
-    const [sample, ...found] = await Promise.all([
-        getSample(trio.child),
-        ...CANDIDATE_QUERIES.map(query => runQuery<VariantRow>('query/variant', { ...query, sample_ids: [trio.child] }))
-    ])
+async function buildTrioReport(trio: Trio, sample: SampleRecord): Promise<TrioReport> {
+    const found = await Promise.all(
+        CANDIDATE_QUERIES.map(query => runQuery<VariantRow>('query/variant', { ...query, sample_ids: [trio.child] }))
+    )
 
     const variants = new Map(found.flat().map(row => [row.vrs_id, row]))
     const ids      = [...variants.keys()]
@@ -151,8 +155,8 @@ async function buildTrioReport(trio: Trio): Promise<TrioReport> {
         // Every annotation of every candidate: the API returns nothing when
         // variant ids and annotation keys are filtered on together.
         runQuery<AnnotationRow>('query/annotation', { vrs_ids: ids }, 200_000),
-        runQuery<VariantRow>('query/variant', { vrs_ids: ids, sample_ids: [trio.father] }),
-        runQuery<VariantRow>('query/variant', { vrs_ids: ids, sample_ids: [trio.mother] }),
+        trio.father ? runQuery<VariantRow>('query/variant', { vrs_ids: ids, sample_ids: [trio.father] }) : null,
+        trio.mother ? runQuery<VariantRow>('query/variant', { vrs_ids: ids, sample_ids: [trio.mother] }) : null,
         runQuery<VariantRow>('query/variant', { vrs_ids: ids, sample_ids: [trio.child], genotypes: ['1/1'] })
     ])
 
@@ -162,8 +166,8 @@ async function buildTrioReport(trio: Trio): Promise<TrioReport> {
         annotations.get(row.vrs_id)!.set(row.key, row)
     }
 
-    const fromFather = new Set(fatherRows.map(row => row.vrs_id))
-    const fromMother = new Set(motherRows.map(row => row.vrs_id))
+    const fromFather = fatherRows && new Set(fatherRows.map(row => row.vrs_id))
+    const fromMother = motherRows && new Set(motherRows.map(row => row.vrs_id))
     const homozygous = new Set(homozygousRows.map(row => row.vrs_id))
 
     const candidates = ids.map((id): CandidateVariant => {
@@ -210,19 +214,48 @@ async function buildTrioReport(trio: Trio): Promise<TrioReport> {
 }
 
 /**
- * Reports already built or under way, so returning to the page is instant and
- * two views of one trio share the queries. A failed report is dropped, so the
- * next visit tries again.
+ * A patient's sample and their parents', found in one query by the references
+ * they are filed under (see findSamples). Null when the patient has no sample.
  */
-const reports = new Map<string, Promise<TrioReport>>()
+async function findTrio(patientId: string): Promise<{ trio: Trio, sample: SampleRecord } | null> {
+    const samples = await findSamples([patientId, `${patientId}-F`, `${patientId}-M`])
+    const byRef   = new Map(samples.map(sample => [patientRefOf(sample), sample]))
+    const child   = byRef.get(patientId)
 
-export function loadTrioReport(trio: Trio): Promise<TrioReport> {
-    const key = `${trio.child}|${trio.father}|${trio.mother}`
-    let report = reports.get(key)
+    if (!child) return null
+
+    const childId = sampleIdOf(child)
+    if (!childId) {
+        throw new Error(`Genomics API: cannot read the sample id of patient ${patientId}'s sample.`)
+    }
+
+    const parent = (suffix: string) => {
+        const sample = byRef.get(patientId + suffix)
+        return sample && sampleIdOf(sample)
+    }
+
+    return { trio: { child: childId, father: parent('-F'), mother: parent('-M') }, sample: child }
+}
+
+/** One query to find the family, then the two rounds of buildTrioReport(). */
+async function buildPatientReport(patientId: string): Promise<TrioReport | null> {
+    const found = await findTrio(patientId)
+    return found && buildTrioReport(found.trio, found.sample)
+}
+
+/**
+ * Reports already built or under way, by patient, so returning to the page is
+ * instant. A failed report is dropped, so the next visit tries again.
+ */
+const reports = new Map<string, Promise<TrioReport | null>>()
+
+/** A patient's genomic report, or null when they have no sample. */
+export function loadPatientReport(patientId: string): Promise<TrioReport | null> {
+    let report = reports.get(patientId)
     if (!report) {
-        report = buildTrioReport(trio)
-        report.catch(() => reports.delete(key))
-        reports.set(key, report)
+        report = buildPatientReport(patientId)
+        report.catch(() => reports.delete(patientId))
+        reports.set(patientId, report)
     }
     return report
 }
