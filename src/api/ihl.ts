@@ -258,7 +258,7 @@ export async function getPatientSummary(patientId: string) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ subject_ref: `Patient/${patientId}` })
+            body: JSON.stringify({ subject_ref: patientId })
         }).then(response => {
             if (!response.ok) {
                 throw new Error(`Failed to fetch patient summary: ${response.statusText}`);
@@ -271,6 +271,237 @@ export async function getPatientSummary(patientId: string) {
         });
     }
     
+    /*
+    {
+        "subject_ref": "Patient/29c70fc826dcd14048563a07cbb3f74fe7b20785ce0e81926864620d92b84994",
+        "fields": {
+            "ibd_diagnosis_subtype_best": {
+                "display": "Best IBD Diagnosis Subtype",
+                "description": "IBD subtype carried by the winning diagnosis-date evidence row.",
+                "details": "Values CD/UC/IBDU/IBD_NOS. Provenance of the anchor only; do not use for subtype cohorts or arm assignment.",
+                "type": "string",
+                "label": "IBD Type",
+                "value": "UC",
+                "category": "Overview",
+                "source_refs": []
+            },
+            "ibd_diagnosis_date_best": {
+                "display": "Best IBD Diagnosis Date",
+                "description": "Final resolved IBD diagnosis (establishment) date, winner of the 5-rung resolution ladder.",
+                "details": "",
+                "type": "day",
+                "label": "IBD Diagnosis Date",
+                "value": "2019-11-01",
+                "category": "Overview",
+                "source_refs": []
+            },
+            "paris_classification": {
+                "label": "Paris Classification",
+                "value": "A1A E4 S1",
+                "category": "Overview",
+                "source_refs": [
+                    "DocumentReference/b0edc35c1659429ec5cf48a314ecc1015a175c68da6eacb20d2404889a9c36f7",
+                    "DocumentReference/b12d6db61ea7e0eb9257ad3c706d880566c12f54939e78ffdb09456fa5376cf6",
+                    "DocumentReference/3aac8f0348a2a0242dec750fcd288cd19d6069a8847eafb79b8d55bf82978cac",
+                    "DocumentReference/9ab4cb8cd847a11457caf8b4b70e8424af60ce47ef36bde20a75ec8bfdea95ea",
+                    "DocumentReference/d185f73af10817f3ec21bb5e6b1e0a494e21726d17b888b975a0cfb85e8de793",
+                    "DocumentReference/5f3e450252550fd6fc5b8b7c61f9fb4fc802b16a12ea6e802532d8f870c38972",
+                    "DocumentReference/065f3512b0597ca56905d902d1e6a9486e3357085e99f7f30b00268737253b5a",
+                    "DocumentReference/480fd7189eb957ce00f0d2474c990a3c4d1e30e5a6e655f6828feab4ba1e2388",
+                    "DocumentReference/5272bc540ed88666a72dbb445288728438afb81d911da2987406e3dcc0f0b7b2",
+                    "DocumentReference/dc1d78440474ededea0c026d28c4d05971bf90e55183512eaa0d3cc6d21ca75e",
+                    "DocumentReference/bf6eb69f08ddb2ad02686beae57a2dd0a05e281cb2acb84fc093f968189bd863",
+                    "DocumentReference/507c3b8f8243cf1aefbdf7484dcbb3f5182d30cd531a31eacafe7a8d76222132",
+                    "DocumentReference/76293ae753d2983949e52cb91bf26be8d68d2f2d25711b9536ca9b94b77396be",
+                    "DocumentReference/62cbfcab8b8a3be1df4946f98188a3d359c4ebf16c5072a4da13dbed19998791",
+                    "DocumentReference/b9c9b6b90d61cdabcf4573c090c65cd3ddea28465573f2a1daae71f0121c1841",
+                    "DocumentReference/861871d8f5f68fbfbe2c2682b684237514f7d17a113fb334b549cfd0450ec0bb",
+                    "DocumentReference/e5386e36ea4f7707274585e33d051ef2a112f2d873e2ddfb366122357427f35f",
+                    "DocumentReference/7c024e7c5a3e0c8583799346655504fac35f2d19ec58586cac70ebcc38701b86",
+                    "DocumentReference/b44007b52f5772e897dd7ca3d0c357b9f767d7b3bfb60d05fec2fc711e1148f1",
+                    "DocumentReference/4ab206c483e78e24e46b3cf02eb717e88939b3d676fd47d8590653a771e09af3",
+                    "DocumentReference/3bdf4eb27ab904ccfc8e97d5950fa8b296f3268938afc2520e63ede0137f4ff4",
+                    "DocumentReference/805f8a0aa4314b6d18876e1dd66985017a56047bc31e1dfedf78d60b480ef2ae",
+                    "DocumentReference/c8b407629cbc876d1ae8043c9fc49ee9dfbc6c5cdd26635a067bf9076cc85ebc",
+                    "DocumentReference/eefb70b1b45987234bed2f39603431541f300198421bee09c38d7a1861dc4c1f",
+                    "DocumentReference/7b21f8f6752b5559e21e955d46baf600d2b21711c66e4e1bf655c8d512111f45",
+                    "DocumentReference/306a4b816be9cf33588d9c6f8adf82049fde4ee5ec9e4403db8bc110816014c8",
+                    "DocumentReference/2e9c8d4b88401cd7ebcd7e81c465d019de9c354bb1fe3f1503f7d7929bdcc300",
+                    "DocumentReference/036ce9ea785f17aa1c1017351ca844fd7f88e507683ca2c75df4ce9000763a14",
+                    "DocumentReference/fbabf4eeba73aab3f421b94b40141ceaf7a5b9f3ab399b001e663b1953736788",
+                    "DocumentReference/8af1fe5e6abec44f396a64770f780f912fc086643b000114317ed14f7c345dcc",
+                    "DocumentReference/6b0b9bf5cce96d2fdfb39e1b862b40448c61a8cfe7f201b153027cb0ac69f6b7",
+                    "DocumentReference/26b9abe29b958568d3a701bd0a413568c4d227dc3691a5b53a3082c979c68639",
+                    "DocumentReference/1c29a0397025d39fda7ab731562452a09120115642ce553a016af1ab30e3f621",
+                    "DocumentReference/539cbad9598bdd6edad2a9ac918bdb4280f30662106eebfa898cff2c41e638bd",
+                    "DocumentReference/600baf54fbc3122ff92e35b6c79636cb5e9e3859a9b82d7ea0c53361ee7e5e07",
+                    "DocumentReference/33d1cdd348f8816652453d2c85792cfbee837a35dc03ace2dea4c16f417a8f58",
+                    "DocumentReference/c5816a4f6695585e72ed7ba1a4f6918ae2dec162d5d3eb34d7a2d0ed0293933b",
+                    "DocumentReference/dbdd6523e6f5b55131983af51df0859fc44ac75259ba9458ec2ab65ecc2815b9",
+                    "DocumentReference/34774e9f70cb2d196486ae3c5757523b4beab4c457f6d02a2130d327351c2364",
+                    "DocumentReference/1a3e126e208a65b9122065c0c3d67ebee04505f9cc07040945a4b4b34738be9d",
+                    "DocumentReference/7e48db24f27af515a2ea3ac26838ca0337ae5720601017d4583dcaa373212c6a",
+                    "DocumentReference/c8f6c49cbb92465ddd9c7edd96b0208d629825750e22688858408a8a136fc510",
+                    "DocumentReference/cf344703dc8e66b43725366593813065ba1c26d4591a2c819ecfd7617f526793",
+                    "DocumentReference/c112a64174a4ecf3be5911dd283377a0fa75252ded48eb0a3eb016f088f0486f",
+                    "DocumentReference/c50c7f2bce819edf402afbe22cd6bcf4a58dab5768cc46e6d87c0f0982795ae1",
+                    "DocumentReference/c9033641abe8c87f837224e84e116e84238d727452bd2c879c7075f5d02d72c3",
+                    "DocumentReference/cb181d27eb5f134156a5adbdc79a0915393039699904e7a71eb1b91818004ea2",
+                    "DocumentReference/3bd809d7ed2f16fd55e9e51565cd802e2be92dd32197918709ffd13770dda24e",
+                    "DocumentReference/949dcf61fd83b144723af22ae78ff7760b2c8e71545727bf8d46f84d0c3f16ce",
+                    "DocumentReference/4e825aa6300e35fe03a3ffe5af44e80a49c69af7b95bac4902a154031ce827a3",
+                    "DocumentReference/07fc1c69655dafd01a02b29c84496dc9fc7f1f7826521c07626d9713fa348e41",
+                    "DocumentReference/bb94af0a9f610b4e58611b0d84fa9cee726dac6c3f28b24395a83fa6a3356fd7",
+                    "DocumentReference/fcc802a79386f3d3602fa47776d4f8d57c08a5730274d1dd6bec976d21640e60",
+                    "DocumentReference/1d7eb6bea8849061a3324b11384552cecceebccfdab7a6d55cd1729f1a23e17c",
+                    "DocumentReference/b62c9ebbb2041d9e0ede1bf8a61e897728e43a4c05ddb86dfe77e89c08e35c68"
+                ]
+            },
+            "endoscopy_details": {
+                "label": "Endoscopy Details",
+                "value": {},
+                "category": "Overview",
+                "source_refs": []
+            },
+            "activity_index": {
+                "label": "Activity Index",
+                "value": {},
+                "category": "Overview",
+                "source_refs": []
+            },
+            "abdominal_pain": {
+                "details": "\n note_author_date:Author date of a clinical note - one canonical value per note via ibd__sample_casedef_author.",
+                "label": "Abdominal Pain",
+                "value": {
+                    "note_author_date": "2026-07-13",
+                    "abdominal_pain": "NONE"
+                },
+                "category": "Current Symptoms",
+                "source_refs": [
+                    "DocumentReference/c8f6c49cbb92465ddd9c7edd96b0208d629825750e22688858408a8a136fc510"
+                ]
+            },
+            "stool_frequency": {
+                "label": "Stool Frequency",
+                "value": {},
+                "category": "Current Symptoms",
+                "source_refs": []
+            },
+            "weight_loss": {
+                "details": "\n event_date:NULL when no defensible date exists; sort NULLS LAST.\n\n value_text:Text payload of a timeline event (enums, subtypes, display strings).\n\n code:Valueset concept code (e.g. ICD-10/RxNorm/LOINC).",
+                "label": "Weight Loss",
+                "value": {
+                    "event_date": "2019-12-03",
+                    "value_text": "Failure to thrive (child)",
+                    "code": "R62.51",
+                    "pcdai_weight_date": "2026-07-13",
+                    "pcdai_weight": "GAIN_OR_VOLUNTARY",
+                    "pcdai_weight_spans": "[[1877, 1953]]"
+                },
+                "category": "Current Symptoms",
+                "source_refs": [
+                    "Condition/41fa37f8038f85869beaa671356ea32200db7e0945c613010954b2aecde46923",
+                    "DocumentReference/c8f6c49cbb92465ddd9c7edd96b0208d629825750e22688858408a8a136fc510"
+                ]
+            },
+            "nocturnal_stool": {
+                "details": "\n note_author_date:Author date of a clinical note - one canonical value per note via ibd__sample_casedef_author.",
+                "label": "Nocturnal Stool",
+                "value": {
+                    "note_author_date": "2026-07-13",
+                    "nocturnal_stools": "NOT_ASSESSED",
+                    "stools_per_day": "NUM_STOOLS_3_TO_5"
+                },
+                "category": "Current Symptoms",
+                "source_refs": [
+                    "DocumentReference/c8f6c49cbb92465ddd9c7edd96b0208d629825750e22688858408a8a136fc510"
+                ]
+            },
+            "last_pcdai": {
+                "label": "Last PCDAI",
+                "value": {},
+                "category": "Current Symptoms",
+                "source_refs": []
+            },
+            "steroid_exposure": {
+                "label": "Steroid Exposure",
+                "value": {
+                    "steroid_exposed_bool": true,
+                    "first_steroid_date": "2012-05-30",
+                    "last_steroid_date": "2026-01-20"
+                },
+                "category": "Key Facts",
+                "source_refs": [
+                    "MedicationRequest/9b60ede7bf89e7d20e30cc758236f36dbe7a6f292fdfe8acdaec80312097115c",
+                    "MedicationRequest/0681ddef6c6cce33a7149f6727732d2f5fa68c92b5423854f7205939a23f53f1",
+                    "DocumentReference/dc1d78440474ededea0c026d28c4d05971bf90e55183512eaa0d3cc6d21ca75e",
+                    "DocumentReference/eefb70b1b45987234bed2f39603431541f300198421bee09c38d7a1861dc4c1f",
+                    "DocumentReference/507c3b8f8243cf1aefbdf7484dcbb3f5182d30cd531a31eacafe7a8d76222132",
+                    "DocumentReference/5f3e450252550fd6fc5b8b7c61f9fb4fc802b16a12ea6e802532d8f870c38972",
+                    "DocumentReference/b62c9ebbb2041d9e0ede1bf8a61e897728e43a4c05ddb86dfe77e89c08e35c68",
+                    "DocumentReference/949dcf61fd83b144723af22ae78ff7760b2c8e71545727bf8d46f84d0c3f16ce",
+                    "DocumentReference/b12d6db61ea7e0eb9257ad3c706d880566c12f54939e78ffdb09456fa5376cf6",
+                    "DocumentReference/1a3e126e208a65b9122065c0c3d67ebee04505f9cc07040945a4b4b34738be9d",
+                    "DocumentReference/cf344703dc8e66b43725366593813065ba1c26d4591a2c819ecfd7617f526793",
+                    "DocumentReference/1c29a0397025d39fda7ab731562452a09120115642ce553a016af1ab30e3f621",
+                    "DocumentReference/b0edc35c1659429ec5cf48a314ecc1015a175c68da6eacb20d2404889a9c36f7",
+                    "DocumentReference/fcc802a79386f3d3602fa47776d4f8d57c08a5730274d1dd6bec976d21640e60",
+                    "DocumentReference/ef504e0e34d214d1875e523ab427088127d1c7fddcfb047eab243de3339fa223",
+                    "DocumentReference/2e9c8d4b88401cd7ebcd7e81c465d019de9c354bb1fe3f1503f7d7929bdcc300",
+                    "DocumentReference/bb94af0a9f610b4e58611b0d84fa9cee726dac6c3f28b24395a83fa6a3356fd7",
+                    "DocumentReference/8af1fe5e6abec44f396a64770f780f912fc086643b000114317ed14f7c345dcc",
+                    "DocumentReference/cb181d27eb5f134156a5adbdc79a0915393039699904e7a71eb1b91818004ea2",
+                    "DocumentReference/1d7eb6bea8849061a3324b11384552cecceebccfdab7a6d55cd1729f1a23e17c",
+                    "DocumentReference/e5386e36ea4f7707274585e33d051ef2a112f2d873e2ddfb366122357427f35f",
+                    "MedicationRequest/0a69f482af9157d60857da1e07a6614745c28419954c6eba37c89237a35d92b6",
+                    "DocumentReference/c8f6c49cbb92465ddd9c7edd96b0208d629825750e22688858408a8a136fc510",
+                    "DocumentReference/c8b407629cbc876d1ae8043c9fc49ee9dfbc6c5cdd26635a067bf9076cc85ebc",
+                    "DocumentReference/b9c9b6b90d61cdabcf4573c090c65cd3ddea28465573f2a1daae71f0121c1841",
+                    "DocumentReference/c112a64174a4ecf3be5911dd283377a0fa75252ded48eb0a3eb016f088f0486f",
+                    "DocumentReference/b44007b52f5772e897dd7ca3d0c357b9f767d7b3bfb60d05fec2fc711e1148f1",
+                    "DocumentReference/76293ae753d2983949e52cb91bf26be8d68d2f2d25711b9536ca9b94b77396be",
+                    "DocumentReference/d185f73af10817f3ec21bb5e6b1e0a494e21726d17b888b975a0cfb85e8de793",
+                    "DocumentReference/7c024e7c5a3e0c8583799346655504fac35f2d19ec58586cac70ebcc38701b86",
+                    "DocumentReference/600baf54fbc3122ff92e35b6c79636cb5e9e3859a9b82d7ea0c53361ee7e5e07",
+                    "DocumentReference/306a4b816be9cf33588d9c6f8adf82049fde4ee5ec9e4403db8bc110816014c8",
+                    "DocumentReference/5272bc540ed88666a72dbb445288728438afb81d911da2987406e3dcc0f0b7b2",
+                    "DocumentReference/3aac8f0348a2a0242dec750fcd288cd19d6069a8847eafb79b8d55bf82978cac",
+                    "DocumentReference/7b21f8f6752b5559e21e955d46baf600d2b21711c66e4e1bf655c8d512111f45",
+                    "DocumentReference/dbdd6523e6f5b55131983af51df0859fc44ac75259ba9458ec2ab65ecc2815b9",
+                    "DocumentReference/480fd7189eb957ce00f0d2474c990a3c4d1e30e5a6e655f6828feab4ba1e2388",
+                    "DocumentReference/c9033641abe8c87f837224e84e116e84238d727452bd2c879c7075f5d02d72c3",
+                    "DocumentReference/34774e9f70cb2d196486ae3c5757523b4beab4c457f6d02a2130d327351c2364",
+                    "DocumentReference/3bd809d7ed2f16fd55e9e51565cd802e2be92dd32197918709ffd13770dda24e",
+                    "DocumentReference/bf6eb69f08ddb2ad02686beae57a2dd0a05e281cb2acb84fc093f968189bd863",
+                    "MedicationRequest/37058b780dc67399edaa568f7a824c1b80fa6c8471f91859962ba57108810a58",
+                    "MedicationRequest/d3a82c6689c8cc383d611c43d14945e4c04b2286e133b40a52e04a85e4d6bec7",
+                    "MedicationRequest/48e3098c3878b969f14dadf13643c2a6f3fa05136367cf3c0213ce1e6fcb982e"
+                ]
+            },
+            "prior_surgery": {
+                "details": "\n first_qualifying_surgery_date:Date of the first qualifying IBD surgery\n\n first_qualifying_surgery_type:Type of the first qualifying IBD surgery",
+                "label": "Prior Surgery",
+                "value": {
+                    "prior_surgery_bool": true,
+                    "first_qualifying_surgery_date": "2023-09-02",
+                    "first_qualifying_surgery_type": "OSTOMY_OR_FECAL_DIVERSION"
+                },
+                "category": "Key Facts",
+                "source_refs": []
+            },
+            "perianal_disease": {
+                "details": "\n paris_cd_perianal_ever:Crohn disease Paris perianal disease modifier at maximum extent or severity across all notes - describes the phenotype after progression so it is not a model covariate",
+                "label": "Perianal Disease",
+                "value": {
+                    "paris_cd_perianal_ever": null,
+                    "latest_coded_perianal_date": null
+                },
+                "category": "Key Facts",
+                "source_refs": []
+            }
+        }
+    }
+    */
     return {
         subject_ref: `Patient/${patientId}`,
         fields: {
