@@ -21,7 +21,7 @@ After picking a patient from the cohort list, the patient view offers:
 | **IBD Timeline**         | An IBD summary (subtype, diagnosis date, Paris classification, and more) above a timeline of IBD medications by drug class and IBD lab panel results. |
 | **Similarity Cohort**    | Modeled outcomes for treatment options in a cohort of similar patients, with confidence intervals.                     |
 | **Survival Analysis**    | Event-free survival curves for the VEO-IBD cohort, stratified by age at diagnosis, first-line therapy, sex, subtype, or severity, with a risk table. |
-| **Genomics**             | Germline variants from a genomics API: candidate variants with their ACMG classification, predictions, and phenotypes, and which parent each came from. |
+| **Genomics**             | Germline variant review for the patient and both parents, in four views: ClinVar-classified variants, rare damaging variants in known IBD genes, possible de novo variants, and recessive (homozygous or compound heterozygous) candidates. |
 | **Health Record Search** | Full-text search across conditions, medications, observations, procedures, allergies, encounters, reports, immunizations, and documents. |
 | **Clinical Notes**       | Clinical notes on a timeline, grouped by note type, with the note text and attachments.                                |
 

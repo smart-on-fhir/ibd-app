@@ -20,6 +20,16 @@ const POLL_INTERVAL = 1500;
  */
 const QUERY_TIMEOUT = 300_000;
 
+/** Matches variants by one of their annotations. */
+export type AnnotationFilter =
+    | { type: "string" , key: string, value: string[] }
+    | { type: "numeric", key: string, operator: "<" | "<=" | ">" | ">=" | "=", value: number }
+    /**
+     * Has the annotation at all. No use for keys every variant carries, empty
+     * or not: IHL_ANN__ibd_taxonomy_bucket, for one, then matches everything.
+     */
+    | { type: "key"    , key: string }
+
 export interface GenomicsQuery {
     vrs_ids?      : string[]
     regions?      : { chromosome: string, start: number, end: number }[]
@@ -29,6 +39,7 @@ export interface GenomicsQuery {
     patient_refs? : string[]
     sample_ids?   : string[]
     genotypes?    : string[]
+    annotations?  : AnnotationFilter[]
 }
 
 /** A variant, as `query/variant` returns it. */
@@ -84,13 +95,72 @@ async function failure(res: Response, what: string): Promise<Error> {
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
- * Runs a query job and waits for its results.
+ * Jobs allowed to run at once. The API slows down sharply under load — one job
+ * among a dozen took three minutes against fifteen seconds for its siblings —
+ * so a page that needs many queries waits its turn rather than piling them on.
+ */
+const MAX_RUNNING_JOBS = 6;
+
+let runningJobs = 0;
+const waitingJobs: (() => void)[] = [];
+
+async function withJobSlot<T>(run: () => Promise<T>): Promise<T> {
+    if (runningJobs >= MAX_RUNNING_JOBS) {
+        await new Promise<void>(resolve => waitingJobs.push(resolve));
+    }
+    runningJobs++;
+    try {
+        return await run();
+    } finally {
+        runningJobs--;
+        waitingJobs.shift()?.();
+    }
+}
+
+/**
+ * Runs a query and waits for all of its results, a page at a time, so a large
+ * result is never silently cut short.
  * @param path The query endpoint, like `query/variant`.
  * @param query The filters. All of them must match.
- * @param limit The most rows to return. The API's default is 20.
+ * @param pageSize Rows per page. The API's default is 20.
  */
-export async function runQuery<T>(path: string, query: GenomicsQuery, limit = 1000): Promise<T[]> {
-    const res = await fetch(buildUrl(path, { limit }), {
+export async function runQuery<T>(path: string, query: GenomicsQuery, pageSize = 5000): Promise<T[]> {
+    const rows: T[] = [];
+    for (let offset = 0; ; offset += pageSize) {
+        const page = await withJobSlot(() => runJob<T>(path, query, pageSize, offset));
+        rows.push(...page);
+        if (page.length < pageSize) {
+            return rows;
+        }
+    }
+}
+
+/** Attempts at a request that fails in passing before giving up on it. */
+const REQUEST_ATTEMPTS = 4;
+
+/**
+ * fetch(), retried when the failure looks passing: no response at all, or a
+ * gateway error. The API's gateway sends those without CORS headers, so in a
+ * browser they arrive as network errors rather than as statuses. Any other
+ * response, failed or not, is returned as it is.
+ */
+async function fetchWithRetry(url: URL, init?: RequestInit): Promise<Response> {
+    for (let attempt = 1; ; attempt++) {
+        try {
+            const res = await fetch(url, init);
+            if (![502, 503, 504].includes(res.status) || attempt === REQUEST_ATTEMPTS) {
+                return res;
+            }
+        } catch (error) {
+            if (attempt === REQUEST_ATTEMPTS) throw error;
+        }
+        await sleep(1000 * 2 ** (attempt - 1));
+    }
+}
+
+/** One query job: starts it, then polls until its results are ready. */
+async function runJob<T>(path: string, query: GenomicsQuery, limit: number, offset: number): Promise<T[]> {
+    const res = await fetchWithRetry(buildUrl(path, { limit, offset }), {
         method : "POST",
         headers: { "content-type": "application/json" },
         body   : JSON.stringify(query)
@@ -106,14 +176,10 @@ export async function runQuery<T>(path: string, query: GenomicsQuery, limit = 10
     const deadline    = Date.now() + QUERY_TIMEOUT;
 
     while (Date.now() < deadline) {
-        const result = await fetch(buildUrl(`query/results/${executionId}`));
+        const result = await fetchWithRetry(buildUrl(`query/results/${executionId}`));
 
         if (result.status === 200) {
-            const rows = await result.json() as T[];
-            if (rows.length >= limit) {
-                console.warn(`Genomics API: ${path} returned ${rows.length} rows, its limit. Some may be missing.`);
-            }
-            return rows;
+            return await result.json() as T[];
         }
 
         if (result.status !== 202) {
