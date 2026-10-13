@@ -4,12 +4,12 @@ import { useClinicalData, lib }             from 'clinical-primitives'
 import { Spinner }                          from '../components/ui/Spinner'
 import { ErrorMessage }                     from '../components/ui/ErrorMessage'
 import { useMediaQuery }                    from '../hooks/useMediaQuery'
-import { getPatient as fetchPatient }       from '../api/ihl'
+import { getPatient as fetchPatient } from '../api/ihl'
 import { useResetClinicalData }             from '../hooks/usePrefetch'
 import { Link, NavLink, Outlet, useParams } from 'react-router'
 import {
   ChartColumnDecreasing, Clock, Search, Sidebar, UserCircle, UserCircleIcon,
-  Users, FileText, ArrowLeft, Dna
+  Users, FileText, ArrowLeft, Dna, ClipboardList
 }  from 'lucide-react'
 
 
@@ -128,6 +128,7 @@ function PatientNav() {
   const base = `/patients/${id}`
   return (
     <nav className="flex-1 space-y-1 px-2 py-3">
+      <NavItem to={`${base}/brief`}    label="Pre-visit Brief"      icon={<ClipboardList className="inline-block h-4 w-4 mr-1" />} />
       <NavItem to={base}               label="IBD Timeline"         icon={<Clock className="inline-block h-4 w-4 mr-1" />} />
       <NavItem to={`${base}/cohort`}   label="Similarity Cohort"    icon={<Users className="inline-block h-4 w-4 mr-1" />} />
       <NavItem to={`${base}/survival`} label="Survival Analysis"    icon={<ChartColumnDecreasing className="inline-block h-4 w-4 mr-1" />} />

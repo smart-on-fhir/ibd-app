@@ -82,6 +82,12 @@ if (!FHIR_API_BASE_URL) {
 }
 
 /**
+ * The cohort every request loads, from `VITE_COHORT_ID` in `.env.local`. Falls
+ * back to `sim-ibd-patients`, the cohort the app was built against.
+ */
+export const COHORT_ID = import.meta.env.VITE_COHORT_ID || "sim-ibd-patients";
+
+/**
  * Cache for the available resource types to avoid redundant network requests.
  */
 let _availableResourceTypes: Promise<string[]> | null = null;

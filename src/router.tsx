@@ -7,6 +7,7 @@ import { NotesPage }                             from './pages/Notes'
 import { CohortPage }                            from './pages/Cohort'
 import { SurvivalPage }                          from './pages/Survival'
 import { GenomicsPage }                          from './pages/Genomics'
+import { BriefPage }                             from './pages/Brief'
 
 
 export const router = createBrowserRouter([
@@ -20,6 +21,7 @@ export const router = createBrowserRouter([
         element: <PatientShell />,
         children: [
           { index: true          , element: <TimelinePage />  },
+          { path: 'brief'        , element: <BriefPage />     },
           { path: 'notes'        , element: <NotesPage />     },
           { path: 'search'       , element: <PatientSearch /> },
           { path: 'timeline'     , element: <TimelinePage />  },

@@ -6,7 +6,7 @@ import { Spinner }                                  from '../components/ui/Spinn
 import { ErrorMessage }                             from '../components/ui/ErrorMessage'
 import { EmptyState }                               from '../components/ui/EmptyState'
 import type { Patient }                             from 'fhir/r4'
-import { getAllPatients }                           from '../api/ihl'
+import { getAllPatients }                from '../api/ihl'
 import { useResetClinicalData }                     from '../hooks/usePrefetch'
 
 
